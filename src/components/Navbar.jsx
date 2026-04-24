@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
-import { Link, useLocation } from 'react-router-dom'
-import { User, Heart, Menu, LogOut, Crown, X, Sparkles, Building, Mail, Phone, ArrowRight, Check, Calendar, ShoppingBag } from 'lucide-react'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
+import { User, Heart, Menu, LogOut, X, Building, ArrowRight, Check, Calendar, ShoppingBag } from 'lucide-react'
 import { Button } from '../shared/ui/button'
 import { Card } from '../shared/ui/card'
 import { useAuth } from '../shared/context/AuthContext'
@@ -16,6 +16,7 @@ const Navbar = () => {
   const [scrolled, setScrolled] = useState(false)
   const [isOnWhiteBackground, setIsOnWhiteBackground] = useState(false)
   const location = useLocation()
+  const navigate = useNavigate()
   const { user, logout, isAuthenticated } = useAuth()
   const { itemCount } = useCart()
 
@@ -36,9 +37,11 @@ const Navbar = () => {
     setIsOnWhiteBackground(isWhitePage)
   }, [location.pathname])
 
-  const handleLogout = () => {
-    logout()
+  const handleLogout = async () => {
+    await logout()
     setUserMenuOpen(false)
+    setMobileMenuOpen(false)
+    navigate('/auth', { replace: true })
   }
 
   const navigationItems = [
@@ -386,20 +389,23 @@ const Navbar = () => {
 
               <div className="space-y-4">
                 <div className="flex items-center gap-3 text-sm text-gray-600">
-                  <Check strokeWidth={1.5} className="w-4 h-4 text-brand-green text-green-500" />
+                  <Check strokeWidth={1.5} className="w-4 h-4 text-green-500" />
                   <span>No hidden fees, pay only for results</span>
                 </div>
                 <div className="flex items-center gap-3 text-sm text-gray-600">
-                  <Check strokeWidth={1.5} className="w-4 h-4 text-brand-green text-green-500" />
+                  <Check strokeWidth={1.5} className="w-4 h-4 text-green-500" />
                   <span>24/7 Support and dedicated account manager</span>
                 </div>
               </div>
 
-              <Link to="/merchant/auth" onClick={() => setBusinessPopupOpen(false)}>
+              <a
+                href="mailto:hello@setthetable.ae?subject=Partner%20with%20Set%20The%20Table"
+                onClick={() => setBusinessPopupOpen(false)}
+              >
                 <Button className="w-full h-14 text-lg rounded-full gradient-brand text-white shadow-xl hover:shadow-2xl hover:scale-[1.02] transition-all">
                   Get Started <ArrowRight strokeWidth={1.5} className="w-5 h-5 ml-2" />
                 </Button>
-              </Link>
+              </a>
             </div>
           </Card>
         </div>
@@ -409,5 +415,4 @@ const Navbar = () => {
 }
 
 export default Navbar
-
 

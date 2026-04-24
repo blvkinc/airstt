@@ -1,4 +1,16 @@
-import React, { createContext, useContext, useState, useEffect } from 'react'
+import React, { createContext, useContext, useEffect, useMemo, useState } from 'react'
+import {
+  clearStoredCustomerSession,
+  fetchCurrentCustomerWithApi,
+  getStoredCustomerToken,
+  getStoredCustomerUser,
+  loginCustomerWithApi,
+  logoutCustomerWithApi,
+  registerCustomerWithApi,
+  resendCustomerVerificationWithApi,
+  updateCustomerProfileWithApi,
+} from '../lib/customerAuthApi'
+import { hasRequiredCustomerProfile } from '../lib/customerProfileCompletion'
 
 const AuthContext = createContext()
 
@@ -14,100 +26,84 @@ export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null)
   const [loading, setLoading] = useState(true)
 
-  // Check for existing user on app load
   useEffect(() => {
-    const savedUser = localStorage.getItem('stt_user')
-    if (savedUser) {
-      setUser(JSON.parse(savedUser))
+    const bootstrap = async () => {
+      const storedUser = getStoredCustomerUser()
+      const storedToken = getStoredCustomerToken()
+
+      if (!storedUser || !storedToken) {
+        clearStoredCustomerSession()
+        setLoading(false)
+        return
+      }
+
+      setUser(storedUser)
+
+      try {
+        const freshUser = await fetchCurrentCustomerWithApi()
+        setUser(freshUser)
+      } catch {
+        clearStoredCustomerSession()
+        setUser(null)
+      } finally {
+        setLoading(false)
+      }
     }
-    setLoading(false)
+
+    bootstrap()
   }, [])
 
   const login = async (email, password) => {
-    // Simple validation - in real app this would be API call
-    if (email && password.length >= 6) {
-      const userData = {
-        id: Date.now(),
-        email,
-        name: email.split('@')[0].replace(/[^a-zA-Z]/g, ' ').replace(/\b\w/g, l => l.toUpperCase()),
-        phone: '+971 50 123 4567',
-        memberSince: new Date().toLocaleDateString('en-US', { month: 'long', year: 'numeric' }),
-        accountType: 'Standard',
-        rewardPoints: 250,
-        totalBookings: 0,
-        favoriteVenues: 0,
-        nextRewardTier: 'Premium',
-        pointsToNextTier: 750
+    try {
+      const session = await loginCustomerWithApi({ email, password })
+      setUser(session.user)
+      return {
+        success: true,
+        user: session.user,
+        requiresProfileCompletion: !hasRequiredCustomerProfile(session.user),
       }
-      
-      setUser(userData)
-      localStorage.setItem('stt_user', JSON.stringify(userData))
-      return { success: true }
+    } catch (error) {
+      return { success: false, error: error?.message || 'Invalid credentials' }
     }
-    
-    return { success: false, error: 'Invalid credentials' }
   }
 
   const register = async (userData) => {
-    // Simple validation - in real app this would be API call
-    const { firstName, lastName, email, phone, password } = userData
-    
-    if (firstName && lastName && email && phone && password.length >= 6) {
-      const newUser = {
-        id: Date.now(),
-        email,
-        name: `${firstName} ${lastName}`,
-        phone,
-        memberSince: new Date().toLocaleDateString('en-US', { month: 'long', year: 'numeric' }),
-        accountType: 'Standard',
-        rewardPoints: 100, // Welcome bonus
-        totalBookings: 0,
-        favoriteVenues: 0,
-        nextRewardTier: 'Premium',
-        pointsToNextTier: 900
-      }
-      
-      setUser(newUser)
-      localStorage.setItem('stt_user', JSON.stringify(newUser))
-      return { success: true }
+    try {
+      const session = await registerCustomerWithApi(userData)
+      setUser(session.user)
+      return { success: true, user: session.user }
+    } catch (error) {
+      return { success: false, error: error?.message || 'Please fill all required fields' }
     }
-    
-    return { success: false, error: 'Please fill all required fields' }
   }
 
-  const logout = () => {
+  const logout = async () => {
+    await logoutCustomerWithApi()
     setUser(null)
-    localStorage.removeItem('stt_user')
   }
 
-  const updateUser = (updates) => {
-    const updatedUser = { ...user, ...updates }
+  const updateUser = async ({ firstName, lastName, phone }) => {
+    const updatedUser = await updateCustomerProfileWithApi({ firstName, lastName, phone })
     setUser(updatedUser)
-    localStorage.setItem('stt_user', JSON.stringify(updatedUser))
+    return updatedUser
   }
 
-  const upgradeToPremium = () => {
-    const premiumUser = {
-      ...user,
-      accountType: 'Premium',
-      rewardPoints: user.rewardPoints + 200, // Upgrade bonus
-      nextRewardTier: 'Platinum',
-      pointsToNextTier: 500
-    }
-    setUser(premiumUser)
-    localStorage.setItem('stt_user', JSON.stringify(premiumUser))
-  }
+  const resendVerification = async () => resendCustomerVerificationWithApi()
 
-  const value = {
+  const upgradeToPremium = () => {}
+
+  const value = useMemo(() => ({
     user,
     loading,
     login,
     register,
     logout,
     updateUser,
+    resendVerification,
     upgradeToPremium,
-    isAuthenticated: !!user
-  }
+    isAuthenticated: !!user,
+    requiresProfileCompletion: !!user && !hasRequiredCustomerProfile(user),
+  }), [loading, user])
 
   return (
     <AuthContext.Provider value={value}>

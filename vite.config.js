@@ -20,7 +20,6 @@ export default defineConfig({
         manualChunks: {
           // Vendor chunks for better caching
           'react-vendor': ['react', 'react-dom', 'react-router-dom'],
-          'ui-vendor': ['antd', '@ant-design/icons'],
           'radix-vendor': ['@radix-ui/react-select', '@radix-ui/react-slot', '@radix-ui/react-tabs'],
           'utils': ['clsx', 'tailwind-merge', 'class-variance-authority']
         }

@@ -1,9 +1,7 @@
 import React, { useState } from 'react'
 import { Link } from 'react-router-dom'
-import { Instagram, Facebook, Twitter, Mail, Phone, MapPin, ArrowRight, Send } from 'lucide-react'
-import { Button } from '../shared/ui/button'
+import { Instagram, Facebook, Twitter, Mail, MapPin, Send } from 'lucide-react'
 import { Input } from '../shared/ui/input'
-import { motion } from 'framer-motion'
 
 const Footer = () => {
   const [email, setEmail] = useState('')
@@ -87,11 +85,16 @@ const Footer = () => {
             <div className="space-y-6">
               <h4 className="text-base font-semibold text-white tracking-wide">Account</h4>
               <ul className="space-y-4">
-                {['My Profile', 'My Bookings', 'Favorites', 'Rewards'].map((item) => (
-                  <li key={item}>
-                    <Link to="/profile" className="text-gray-400 hover:text-brand-purple hover:pl-1 transition-all duration-300 text-sm flex items-center gap-2 group">
+                {[
+                  { label: 'My Profile', href: '/profile' },
+                  { label: 'My Bookings', href: '/profile?tab=bookings' },
+                  { label: 'Favorites', href: '/profile?tab=favorites' },
+                  { label: 'Rewards', href: '/profile?tab=rewards' }
+                ].map((item) => (
+                  <li key={item.label}>
+                    <Link to={item.href} className="text-gray-400 hover:text-brand-purple hover:pl-1 transition-all duration-300 text-sm flex items-center gap-2 group">
                       <span className="w-1 h-1 rounded-full bg-brand-purple opacity-0 group-hover:opacity-100 transition-opacity" />
-                      {item}
+                      {item.label}
                     </Link>
                   </li>
                 ))}
@@ -136,13 +139,15 @@ const Footer = () => {
           {/* Social Icons */}
           <div className="flex items-center space-x-4">
             {[
-              { icon: Instagram, href: '#', color: 'hover:text-pink-500', bg: 'hover:bg-pink-500/10' },
-              { icon: Twitter, href: '#', color: 'hover:text-sky-400', bg: 'hover:bg-sky-400/10' },
-              { icon: Facebook, href: '#', color: 'hover:text-blue-500', bg: 'hover:bg-blue-500/10' }
+              { icon: Instagram, href: 'https://instagram.com', color: 'hover:text-pink-500', bg: 'hover:bg-pink-500/10' },
+              { icon: Twitter, href: 'https://x.com', color: 'hover:text-sky-400', bg: 'hover:bg-sky-400/10' },
+              { icon: Facebook, href: 'https://facebook.com', color: 'hover:text-blue-500', bg: 'hover:bg-blue-500/10' }
             ].map((social, index) => (
               <a
                 key={index}
                 href={social.href}
+                target="_blank"
+                rel="noreferrer"
                 className={`p-2.5 bg-white/5 text-gray-400 rounded-xl transition-all duration-300 hover:scale-110 ${social.color} ${social.bg}`}
               >
                 <social.icon strokeWidth={1.5} className="w-4 h-4" />
@@ -152,12 +157,12 @@ const Footer = () => {
 
           {/* Legal Links */}
           <div className="flex space-x-6">
-            <Link to="#" className="text-gray-500 hover:text-white text-sm transition-colors">
+            <a href="mailto:hello@setthetable.ae?subject=Privacy%20Policy%20Request" className="text-gray-500 hover:text-white text-sm transition-colors">
               Privacy Policy
-            </Link>
-            <Link to="#" className="text-gray-500 hover:text-white text-sm transition-colors">
+            </a>
+            <a href="mailto:hello@setthetable.ae?subject=Terms%20of%20Service%20Request" className="text-gray-500 hover:text-white text-sm transition-colors">
               Terms of Service
-            </Link>
+            </a>
           </div>
         </div>
       </div>

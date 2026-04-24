@@ -1,0 +1,8 @@
+export { EventAvailability } from './components/detail/EventAvailability'
+export { EventGallery } from './components/detail/EventGallery'
+export { EventHeader } from './components/detail/EventHeader'
+export { EventOverview } from './components/detail/EventOverview'
+export { EventPackages } from './components/detail/EventPackages'
+export { EventReviews } from './components/detail/EventReviews'
+export { EventSidebar } from './components/detail/EventSidebar'
+export { EventVenue } from './components/detail/EventVenue'

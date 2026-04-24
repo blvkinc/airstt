@@ -1,0 +1,8 @@
+export { BookingsSection } from './components/BookingsSection'
+export { CancellationSection } from './components/CancellationSection'
+export { FavoritesSection } from './components/FavoritesSection'
+export { ProfileHeader } from './components/ProfileHeader'
+export { ProfileTabsNav } from './components/ProfileTabsNav'
+export { ReceiptsSection } from './components/ReceiptsSection'
+export { RewardsSection } from './components/RewardsSection'
+export { SettingsSection } from './components/SettingsSection'
