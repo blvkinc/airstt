@@ -10,6 +10,36 @@ import {
 
 const CartContext = createContext()
 
+const EMPTY_CART_SUMMARY = {
+  lineTotal: 0,
+  onlineDueAmount: 0,
+  offlineDueAmount: 0,
+  remainingBalanceAmount: 0,
+  itemCount: 0,
+  currency: 'AED',
+}
+
+const toNumber = (value) => {
+  const numeric = Number(value)
+  return Number.isFinite(numeric) ? numeric : 0
+}
+
+const buildCartSummaryFromItems = (cartItems = []) => {
+  const currency = cartItems.find((item) => item?.currency)?.currency || EMPTY_CART_SUMMARY.currency
+
+  return cartItems.reduce((nextSummary, item) => ({
+    ...nextSummary,
+    lineTotal: nextSummary.lineTotal + toNumber(item?.lineTotal),
+    onlineDueAmount: nextSummary.onlineDueAmount + toNumber(item?.onlineDueAmount),
+    offlineDueAmount: nextSummary.offlineDueAmount + toNumber(item?.offlineDueAmount),
+    remainingBalanceAmount: nextSummary.remainingBalanceAmount + toNumber(item?.remainingBalanceAmount),
+    itemCount: nextSummary.itemCount + 1,
+  }), {
+    ...EMPTY_CART_SUMMARY,
+    currency,
+  })
+}
+
 export const useCart = () => {
   const context = useContext(CartContext)
   if (!context) {
@@ -21,27 +51,31 @@ export const useCart = () => {
 export const CartProvider = ({ children }) => {
   const { isAuthenticated } = useAuth()
   const [items, setItems] = useState([])
-  const [loading, setLoading] = useState(false)
+  const [summary, setSummary] = useState(EMPTY_CART_SUMMARY)
+  const [initialLoading, setInitialLoading] = useState(false)
+  const [pendingQuantityByItemId, setPendingQuantityByItemId] = useState({})
   const [error, setError] = useState('')
 
   const loadCart = useCallback(async () => {
     if (!isAuthenticated) {
       setItems([])
+      setSummary(EMPTY_CART_SUMMARY)
       setError('')
-      setLoading(false)
+      setInitialLoading(false)
       return
     }
 
-    setLoading(true)
+    setInitialLoading(true)
 
     try {
       const payload = await fetchCustomerCart()
       setItems(payload.items)
+      setSummary(payload.summary || EMPTY_CART_SUMMARY)
       setError('')
     } catch (nextError) {
       setError(nextError?.message || 'Unable to load your cart right now.')
     } finally {
-      setLoading(false)
+      setInitialLoading(false)
     }
   }, [isAuthenticated])
 
@@ -58,56 +92,67 @@ export const CartProvider = ({ children }) => {
 
     const nextItem = await addCustomerCartItem({ item })
 
-    setItems((prev) => {
-      const matchIndex = prev.findIndex((existing) => existing.id === nextItem.id)
-      if (matchIndex >= 0) {
-        const updated = [...prev]
-        updated[matchIndex] = { ...updated[matchIndex], ...nextItem }
-        return updated
-      }
-
-      return [...prev, nextItem]
-    })
     setError('')
+    await loadCart()
 
     return nextItem
-  }, [isAuthenticated])
+  }, [isAuthenticated, loadCart])
 
   const removeFromCart = useCallback(async (id) => {
     await removeCustomerCartItem({ cartItemId: id })
-    setItems((prev) => prev.filter((item) => item.id !== id))
     setError('')
-  }, [])
+    await loadCart()
+  }, [loadCart])
 
-  const updateGuests = useCallback(async (id, guests) => {
-    const normalizedGuests = Math.max(1, Number(guests || 1))
-    const updatedItem = await updateCustomerCartItem({ cartItemId: id, guests: normalizedGuests })
+  const updateQuantity = useCallback(async (id, quantity) => {
+    const normalizedQuantity = Math.max(1, Number(quantity || 1))
 
-    setItems((prev) => prev.map((item) => item.id === id ? { ...item, ...updatedItem, guests: normalizedGuests, quantity: normalizedGuests } : item))
-    setError('')
-  }, [])
+    setPendingQuantityByItemId((current) => ({ ...current, [id]: true }))
+
+    try {
+      const nextItem = await updateCustomerCartItem({ cartItemId: id, quantity: normalizedQuantity })
+      const mergedItems = items.map((item) => (item.id === id ? { ...item, ...nextItem } : item))
+
+      setItems(mergedItems)
+      setSummary(buildCartSummaryFromItems(mergedItems))
+      setError('')
+    } catch (nextError) {
+      setError(nextError?.message || 'Unable to update quantity right now.')
+      throw nextError
+    } finally {
+      setPendingQuantityByItemId((current) => {
+        const nextPendingState = { ...current }
+        delete nextPendingState[id]
+        return nextPendingState
+      })
+    }
+  }, [items])
 
   const clearCart = useCallback(async () => {
     await clearCustomerCartApi()
     setItems([])
+    setSummary(EMPTY_CART_SUMMARY)
     setError('')
   }, [])
 
-  const itemCount = useMemo(() => items.length, [items])
-  const total = useMemo(() => items.reduce((sum, item) => sum + (item.price || 0) * (item.guests || 1), 0), [items])
+  const itemCount = useMemo(() => summary.itemCount || items.length, [items.length, summary.itemCount])
+  const total = useMemo(() => summary.lineTotal || 0, [summary.lineTotal])
 
   return (
     <CartContext.Provider value={{
       items,
-      loading,
+      loading: initialLoading,
+      initialLoading,
+      pendingQuantityByItemId,
       error,
       addToCart,
       removeFromCart,
-      updateGuests,
+      updateQuantity,
       clearCart,
       reloadCart: loadCart,
       itemCount,
       total,
+      summary,
     }}>
       {children}
     </CartContext.Provider>

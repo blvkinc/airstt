@@ -30,7 +30,7 @@ export const publicApi = Object.freeze({
     detail: (eventId) => buildPublicPath('events', eventId),
     offerings: (eventId) => buildPublicPath('events', eventId, 'offerings'),
     availabilityIndex: (eventId) => buildPublicPath('events', eventId, 'availability'),
-    availabilityDetail: (eventId, occurrenceDate) => buildPublicPath('events', eventId, 'dates', occurrenceDate, 'availability'),
+    availabilityDetail: (eventId, slotKey) => buildPublicPath('events', eventId, 'availability', slotKey),
   }),
   venues: Object.freeze({
     list: () => publicRouteFamilies.venues,
@@ -61,10 +61,12 @@ export const customerApi = Object.freeze({
   }),
   checkout: Object.freeze({
     create: () => '/checkout',
+    paymentSession: (paymentId) => `/payments/${paymentId}/checkout-session`,
   }),
   orders: Object.freeze({
     index: () => '/me/orders',
     show: (orderId) => `/me/orders/${orderId}`,
+    paymentStatus: (orderId) => `/orders/${orderId}/payment-status`,
   }),
   bookings: Object.freeze({
     index: () => '/me/bookings',

@@ -5,10 +5,12 @@ import { useAuth } from '../shared/context/AuthContext'
 import { useCart } from '../shared/context/CartContext'
 import { submitCustomerCheckout } from '../shared/api/customerCheckoutApi'
 
+const getQuantityLabel = (quantity) => `${quantity} package${quantity !== 1 ? 's' : ''}`
+
 const CartCheckoutPage = () => {
   const navigate = useNavigate()
   const { user, isAuthenticated } = useAuth()
-  const { items, reloadCart } = useCart()
+  const { items, reloadCart, summary } = useCart()
   const [loading, setLoading] = useState(false)
   const [submitError, setSubmitError] = useState('')
 
@@ -19,14 +21,7 @@ const CartCheckoutPage = () => {
     phone: user?.phone || profile.phone || 'Not provided',
   }
 
-  const dueNowTotal = useMemo(
-    () => items.reduce((sum, item) => sum + (item.paymentMode === 'deposit'
-      ? (item.depositAmount || Math.round((item.price || 0) * (item.guests || 1) * 0.3))
-      : item.paymentMode === 'no_upfront'
-        ? 0
-        : (item.price || 0) * (item.guests || 1)), 0),
-    [items]
-  )
+  const dueNowTotal = useMemo(() => summary.onlineDueAmount || 0, [summary.onlineDueAmount])
 
   if (!isAuthenticated) {
     return <Navigate to="/auth" replace />
@@ -45,6 +40,12 @@ const CartCheckoutPage = () => {
     try {
       const payload = await submitCustomerCheckout()
       await reloadCart()
+
+      if (payload?.checkoutSession?.url) {
+        window.location.assign(payload.checkoutSession.url)
+        return
+      }
+
       navigate(`/orders/${payload.order.id}/confirmation`, {
         replace: true,
         state: {
@@ -94,7 +95,7 @@ const CartCheckoutPage = () => {
                     <Shield strokeWidth={1.5} className="w-5 h-5 text-green-600 mt-0.5" />
                     <div>
                       <h4 className="text-sm font-semibold text-gray-900">Live backend checkout</h4>
-                      <p className="text-xs text-gray-500 mt-0.5">Submitting creates your real backend order from the authenticated cart. To change your contact details, update your profile first. Online payment capture is not completed in this frontend flow yet.</p>
+                      <p className="text-xs text-gray-500 mt-0.5">Submitting creates your real backend order from the authenticated cart. Orders with payment due now continue into Stripe Checkout, while no-upfront orders confirm here. To change your contact details, update your profile first.</p>
                     </div>
                   </div>
 
@@ -120,7 +121,7 @@ const CartCheckoutPage = () => {
                   {items.map((item) => (
                     <div key={item.id} className="text-sm">
                       <div className="font-semibold text-gray-900">{item.eventTitle}</div>
-                      <div className="text-gray-500">{[item.packageName, item.packageVariantLabel].filter(Boolean).join(' • ')} - {item.guests} guests</div>
+                      <div className="text-gray-500">{[item.packageName, item.packageVariantLabel].filter(Boolean).join(' • ')} - {getQuantityLabel(item.quantity || 1)}</div>
                       <div className="text-gray-500">{item.date || item.occurrenceDate || 'Date pending'}</div>
                       <div className="text-gray-500 capitalize">Payment: {(item.paymentMode || 'full').replace('_', ' ')}</div>
                       {(item.packageTypeLabel || item.inventoryLabel) && (
@@ -130,10 +131,20 @@ const CartCheckoutPage = () => {
                   ))}
                   <div className="border-t border-gray-100 pt-4 space-y-2 text-sm">
                     <div className="flex justify-between">
-                      <span className="text-gray-600">Current due now estimate</span>
+                      <span className="text-gray-600">Full amount</span>
+                      <span className="font-medium">AED {summary.lineTotal || 0}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">Due now</span>
                       <span className="font-medium">AED {dueNowTotal}</span>
                     </div>
-                    <div className="text-xs text-gray-500">Final totals and order status are confirmed by the backend checkout response.</div>
+                    {(summary.offlineDueAmount || 0) > 0 && (
+                      <div className="flex justify-between">
+                        <span className="text-gray-600">Remaining amount</span>
+                        <span className="font-medium">AED {summary.offlineDueAmount || 0}</span>
+                      </div>
+                    )}
+                    <div className="text-xs text-gray-500">Totals come directly from the backend cart contract and are confirmed again at checkout.</div>
                   </div>
                 </div>
                 <div className="bg-gray-50 p-4 text-center">

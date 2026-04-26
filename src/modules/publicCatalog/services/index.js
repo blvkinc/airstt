@@ -3,6 +3,7 @@ export { getCatalogExploreResults } from './exploreCatalogService'
 export {
   getCatalogEventDetail,
   getCatalogEventPackages,
+  getCatalogOccurrenceDetail,
   listCatalogEvents,
 } from './eventsCatalogService'
 export { listCatalogEventCategories } from './categoryCatalogService'

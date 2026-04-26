@@ -52,6 +52,33 @@ const normalizePublicEventAvailabilityState = (state) => {
   }
 }
 
+const normalizePublicEventAvailabilityPricingSummary = (summary) => {
+  if (!isPlainObject(summary)) return null
+
+  return {
+    ...summary,
+    contract_version: summary.contract_version ?? null,
+    currency: summary.currency ?? null,
+    quantity: summary.quantity ?? null,
+    payment_mode: summary.payment_mode ?? null,
+    unit_price: summary.unit_price ?? null,
+    base_unit_price: summary.base_unit_price ?? null,
+    discount_amount: summary.discount_amount ?? null,
+    line_total: summary.line_total ?? null,
+    due_now: summary.due_now ?? null,
+    due_later: summary.due_later ?? null,
+    remaining_balance_amount: summary.remaining_balance_amount ?? null,
+    deposit: isPlainObject(summary.deposit)
+      ? {
+          ...summary.deposit,
+          type: summary.deposit.type ?? null,
+          value: summary.deposit.value ?? null,
+          due_now: summary.deposit.due_now ?? null,
+        }
+      : null,
+  }
+}
+
 const normalizePublicEventAvailabilityEffective = (effective) => {
   if (!isPlainObject(effective)) return null
 
@@ -60,6 +87,7 @@ const normalizePublicEventAvailabilityEffective = (effective) => {
     price: effective.price ?? null,
     base_unit_price: effective.base_unit_price ?? null,
     discount_amount: effective.discount_amount ?? null,
+    pricing_summary: normalizePublicEventAvailabilityPricingSummary(effective.pricing_summary),
     price_source: effective.price_source ?? null,
     selected_variant: isPlainObject(effective.selected_variant)
       ? {
@@ -115,6 +143,7 @@ const normalizePublicEventAvailabilityPackage = (pkg) => {
     payment_mode: pkg.payment_mode ?? null,
     deposit_type: pkg.deposit_type ?? null,
     deposit_value: pkg.deposit_value ?? null,
+    pricing_summary: normalizePublicEventAvailabilityPricingSummary(pkg.pricing_summary),
     eligibility: normalizePublicEventAvailabilityEligibility(pkg.eligibility),
     state: normalizePublicEventAvailabilityState(pkg.state),
     effective: normalizePublicEventAvailabilityEffective(pkg.effective),
@@ -146,11 +175,12 @@ export const normalizePublicEventOccurrenceAvailability = (occurrence) => {
   return {
     ...occurrence,
     id: occurrence.id ?? null,
+    slot_key: occurrence.slot_key ?? occurrence.occurrence_date ?? null,
     event_id: occurrence.event_id ?? null,
     starts_at: occurrence.starts_at ?? null,
     ends_at: occurrence.ends_at ?? null,
     occurrence_date: occurrence.occurrence_date ?? null,
-    event_occurrence_id: occurrence.event_occurrence_id ?? occurrence.id ?? null,
+    persisted_occurrence_id: occurrence.persisted_occurrence_id ?? occurrence.event_occurrence_id ?? occurrence.id ?? null,
     lifecycle: normalizePublicEventAvailabilityLifecycle(occurrence.lifecycle),
     packages: Array.isArray(occurrence.packages)
       ? occurrence.packages.map(normalizePublicEventAvailabilityPackage).filter(Boolean)
@@ -167,8 +197,8 @@ export const normalizePublicEventAvailabilityResponse = (payload) => {
   return {
     event_id: data?.event_id ?? null,
     settings: normalizePublicEventAvailabilitySettings(data?.settings),
-    occurrences: Array.isArray(data?.occurrences)
-      ? data.occurrences.map(normalizePublicEventOccurrenceAvailability).filter(Boolean)
+    occurrences: Array.isArray(data?.slots)
+      ? data.slots.map(normalizePublicEventOccurrenceAvailability).filter(Boolean)
       : [],
   }
 }
@@ -179,6 +209,6 @@ export const normalizePublicOccurrenceAvailabilityResponse = (payload) => {
   return {
     event_id: data?.event_id ?? null,
     settings: normalizePublicEventAvailabilitySettings(data?.settings),
-    occurrence: normalizePublicEventOccurrenceAvailability(data?.occurrence),
+    occurrence: normalizePublicEventOccurrenceAvailability(data?.slot),
   }
 }

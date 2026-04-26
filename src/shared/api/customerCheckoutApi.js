@@ -37,6 +37,7 @@ const normalizeBookingItem = (item) => {
     eventId: item.event_id ?? snapshotEvent.id ?? event.id ?? null,
     event: snapshotEvent.title || event.title || 'Event',
     venue: snapshotVenue.name || event?.venue?.name || '',
+    slotKey: snapshotOccurrence.slot_key || item.slot_key || eventOccurrence.slot_key || formatOccurrenceDate(snapshotOccurrence.occurrence_date || eventOccurrence.occurrence_date || eventOccurrence.starts_at),
     occurrenceDate: formatOccurrenceDate(snapshotOccurrence.occurrence_date || eventOccurrence.occurrence_date || eventOccurrence.starts_at),
     date: formatOccurrenceDate(snapshotOccurrence.occurrence_date || eventOccurrence.occurrence_date || eventOccurrence.starts_at),
     time: formatOccurrenceTime(snapshotOccurrence.starts_at || eventOccurrence.starts_at),
@@ -117,7 +118,23 @@ export const submitCustomerCheckout = async ({ signal } = {}) => {
   return {
     order: normalizeOrder(payload?.order),
     payment: payload?.payment || null,
+    checkoutSession: payload?.checkout_session || null,
   }
+}
+
+export const createCustomerPaymentSession = async ({ paymentId, signal } = {}) => {
+  const payload = await post(customerApi.checkout.paymentSession(paymentId), { signal })
+  return payload?.checkout_session || null
+}
+
+export const fetchCustomerPaymentStatus = async ({ orderId, paymentId, sessionId, signal } = {}) => {
+  return get(customerApi.orders.paymentStatus(orderId), {
+    signal,
+    query: {
+      payment: paymentId,
+      session_id: sessionId,
+    },
+  })
 }
 
 export const fetchCustomerOrder = async ({ orderId, signal } = {}) => {

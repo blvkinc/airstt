@@ -1,11 +1,13 @@
 import {
   getPublicEventAvailability,
   getPublicEventById,
+  getPublicOccurrenceAvailability,
   listPublicEvents,
 } from '../api'
 import {
   mapEventCard,
   mapEventDetail,
+  mapOccurrence,
   mapPackageEvent,
 } from '../mappers/eventMappers'
 
@@ -40,5 +42,20 @@ export async function getCatalogEventDetail({ eventId, signal } = {}) {
 export async function getCatalogEventPackages({ eventId, signal } = {}) {
   const { event, availability } = await getCatalogEventWithAvailability({ eventId, signal })
   return mapPackageEvent(event, availability)
+}
+
+export async function getCatalogOccurrenceDetail({ event, eventId, slotKey, filters = {}, signal } = {}) {
+  if (!event || !slotKey) return null
+
+  const availability = await getPublicOccurrenceAvailability({
+    eventId,
+    slotKey,
+    filters,
+    signal,
+  })
+
+  const packageFamilies = event.package_families || []
+
+  return mapOccurrence(availability?.occurrence, event.packages || [], packageFamilies)
 }
 

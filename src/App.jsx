@@ -19,10 +19,10 @@ import BookingPage from './pages/BookingPage'
 import ProfilePage from './pages/ProfilePage'
 import AuthPage from './pages/AuthPage'
 import PremiumUpgradePage from './pages/PremiumUpgradePage'
-import ReviewPage from './pages/ReviewPage'
 import CartPage from './pages/CartPage'
 import CartCheckoutPage from './pages/CartCheckoutPage'
 import BookingConfirmationPage from './pages/BookingConfirmationPage'
+import OrderPaymentReturnPage from './pages/OrderPaymentReturnPage'
 
 class AppErrorBoundary extends React.Component {
   constructor(props) {
@@ -66,9 +66,9 @@ function AppShell() {
         <Route path="/auth/reset-password" element={<AuthPage />} />
         <Route path="/auth/verify-email" element={<AuthPage />} />
         <Route path="/premium" element={<RequireAuth><PremiumUpgradePage /></RequireAuth>} />
-        <Route path="/review/:bookingId" element={<ReviewPage />} />
         <Route path="/cart" element={<CartPage />} />
         <Route path="/cart/checkout" element={<RequireAuth><CartCheckoutPage /></RequireAuth>} />
+        <Route path="/orders/:orderId/payment-return" element={<RequireAuth><OrderPaymentReturnPage /></RequireAuth>} />
         <Route path="/orders/:orderId/confirmation" element={<RequireAuth><BookingConfirmationPage /></RequireAuth>} />
       </Routes>
     </main>

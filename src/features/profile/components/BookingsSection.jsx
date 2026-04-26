@@ -41,9 +41,9 @@ export function BookingsSection({ bookings }) {
                 </Badge>
                 {normalizeProfileStatus(booking.status) === 'completed' && (
                   <div className="mt-3">
-                    <Link to={`/review/${booking.id}`} className="inline-flex items-center gap-2 text-sm font-medium text-brand-red transition-colors hover:text-brand-red/80">
+                    <button type="button" disabled className="inline-flex items-center gap-2 text-sm font-medium text-gray-400 cursor-not-allowed" title="Reviews are not available yet">
                       <Star className="h-4 w-4" />Leave Review
-                    </Link>
+                    </button>
                   </div>
                 )}
               </div>
