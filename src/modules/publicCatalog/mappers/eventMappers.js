@@ -23,29 +23,40 @@ const mapEventBase = (event) => {
   if (!event) return null
 
   const categories = (event.categories || []).map(mapEventCategory).filter(Boolean)
-  const primaryCategory = categories.find((entry) => entry.isPrimary)?.displayName
-    || categories[0]?.displayName
-    || event.service_period
-    || null
+  const primaryCategory = event.primary_category?.name
+    ?? event.primary_category?.slug
+    ?? categories.find((entry) => entry.isPrimary)?.displayName
+    ?? categories[0]?.displayName
+    ?? event.attributes?.service_period
+    ?? event.service_period
+    ?? null
+  const listSummary = event.list_summary ?? null
   const startsAt = pickFirstDefined(
+    listSummary?.next_occurrence?.starts_at,
+    listSummary?.next_bookable_occurrence?.starts_at,
     event.occurrences?.[0]?.starts_at,
     event.availability_summary?.next_occurrence?.starts_at,
     event.availability_summary?.next_bookable_occurrence?.starts_at,
   )
   const endsAt = pickFirstDefined(
+    listSummary?.next_occurrence?.ends_at,
+    listSummary?.next_bookable_occurrence?.ends_at,
     event.occurrences?.[0]?.ends_at,
     event.availability_summary?.next_occurrence?.ends_at,
     event.availability_summary?.next_bookable_occurrence?.ends_at,
   )
   const nextOccurrenceDate = pickFirstDefined(
+    listSummary?.next_occurrence?.occurrence_date,
+    listSummary?.next_bookable_occurrence?.occurrence_date,
     event.occurrences?.[0]?.occurrence_date,
     event.availability_summary?.next_occurrence?.occurrence_date,
     event.availability_summary?.next_bookable_occurrence?.occurrence_date,
   )
   const packagePrices = (event.packages || []).map((pkg) => toNumberOrNull(pkg?.base_price)).filter((value) => value !== null)
-  const nextBookableOccurrence = event.availability_summary?.next_bookable_occurrence ?? null
-  const nextOccurrence = event.availability_summary?.next_occurrence ?? null
-  const availabilityStatus = nextBookableOccurrence?.lifecycle?.effective_status
+  const nextBookableOccurrence = listSummary?.next_bookable_occurrence ?? event.availability_summary?.next_bookable_occurrence ?? null
+  const nextOccurrence = listSummary?.next_occurrence ?? event.availability_summary?.next_occurrence ?? null
+  const availabilityStatus = listSummary?.availability_status
+    ?? nextBookableOccurrence?.lifecycle?.effective_status
     ?? nextOccurrence?.lifecycle?.effective_status
     ?? null
   const availabilitySummary = {
@@ -60,11 +71,11 @@ const mapEventBase = (event) => {
   return {
     id: event.id,
     title: event.title ?? null,
-    image: event.media?.[0]?.asset_url ?? null,
-    images: (event.media || []).map((media) => media?.asset_url).filter(Boolean),
-    rating: toNumberOrNull(event.display_rating),
+    image: event.media_preview?.asset_url ?? event.media?.[0]?.asset_url ?? null,
+    images: [event.media_preview?.asset_url, ...(event.media || []).map((media) => media?.asset_url)].filter(Boolean),
+    rating: toNumberOrNull(event.attributes?.display_rating ?? event.display_rating),
     reviews: null,
-    price: toNumberOrNull(event.availability_summary?.starting_price) ?? (packagePrices.length ? Math.min(...packagePrices) : null),
+    price: toNumberOrNull(listSummary?.price_from ?? event.availability_summary?.starting_price) ?? (packagePrices.length ? Math.min(...packagePrices) : null),
     venue: event.venue?.name ?? null,
     venueId: event.venue?.id ?? event.venue_id ?? null,
     location: event.venue?.area?.name
@@ -79,18 +90,22 @@ const mapEventBase = (event) => {
     date: formatCatalogDate(startsAt || nextOccurrenceDate, { month: 'short', day: 'numeric', year: 'numeric' }),
     time: formatCatalogTimeRange(startsAt, endsAt),
     tags: (event.tags || []).map((entry) => entry?.tag?.name).filter(Boolean),
-    servicePeriod: event.service_period ?? null,
-    environmentType: event.environment_type ?? null,
-    familyFriendly: event.is_family_friendly ?? null,
-    animalFriendly: event.is_animal_friendly ?? null,
+    servicePeriod: event.attributes?.service_period ?? event.service_period ?? null,
+    environmentType: event.attributes?.environment_type ?? event.environment_type ?? null,
+    familyFriendly: event.attributes?.is_family_friendly ?? event.is_family_friendly ?? null,
+    animalFriendly: event.attributes?.is_animal_friendly ?? event.is_animal_friendly ?? null,
     availabilitySummary,
   }
 }
 
-const buildPackageStatusLabel = ({ status, reasonLabel, isBookable }) => {
-  if (reasonLabel) return reasonLabel
-  if (status) return status.replace(/_/g, ' ')
-  return isBookable ? 'Available' : 'Unavailable'
+const buildCustomerFacingCardStatusLabel = ({ status, reasonLabel }) => {
+  const normalizedStatus = String(status || '').trim().toLowerCase()
+  const normalizedReason = String(reasonLabel || '').trim().toLowerCase()
+  const source = [normalizedReason, normalizedStatus].filter(Boolean).join(' ')
+
+  if (source.includes('sold out') || normalizedStatus === 'sold_out') return 'Sold out'
+  if (source.includes('date') || source.includes('day')) return 'Not available for this date'
+  return 'Unavailable'
 }
 
 const formatMetadataLabel = (value) => {
@@ -112,12 +127,28 @@ const isExplicitSellableVariant = (pkg) => {
   return Boolean(eventPackageId)
 }
 
+const DEFAULT_AUDIENCE_LABEL = 'All'
+const NON_SPECIFIC_AUDIENCE_KEYS = new Set(['', 'all', 'any', 'default', 'general', 'mixed', 'standard'])
+
+const normalizeAudienceLabel = (value) => {
+  const normalizedValue = String(value || '').trim()
+  if (!normalizedValue) return null
+
+  return NON_SPECIFIC_AUDIENCE_KEYS.has(normalizedValue.toLowerCase())
+    ? DEFAULT_AUDIENCE_LABEL
+    : formatMetadataLabel(normalizedValue)
+}
+
 const buildVariantLabel = ({ selectedVariant, variantKey, audienceLabel, compatibilityAliases }) => {
-  if (selectedVariant?.label) return selectedVariant.label
-  if (audienceLabel) return audienceLabel
-  if (compatibilityAliases.length > 0) return compatibilityAliases[0]
-  if (variantKey && variantKey !== 'default') return formatMetadataLabel(variantKey)
-  return null
+  const normalizedCompatibilityAliases = compatibilityAliases
+    .map((alias) => normalizeAudienceLabel(alias))
+    .filter(Boolean)
+
+  return normalizeAudienceLabel(selectedVariant?.label)
+    ?? normalizeAudienceLabel(audienceLabel)
+    ?? normalizedCompatibilityAliases[0]
+    ?? normalizeAudienceLabel(variantKey)
+    ?? DEFAULT_AUDIENCE_LABEL
 }
 
 const buildOccurrencePackageSelectionKey = ({ eventPackageId, occurrencePackageId, occurrenceDate, familyKey }) => {
@@ -136,10 +167,10 @@ const buildStablePackageKey = ({ eventPackageId, familyKey, variantKey }) => [
   eventPackageId ?? 'unknown-package',
 ].join(':')
 
-const buildInventoryLabel = ({ isBookable, inventoryRemaining, statusLabel }) => {
-  if (!isBookable) return statusLabel || 'Unavailable'
-  if (inventoryRemaining === null || inventoryRemaining === undefined) return 'Availability confirmed at checkout'
-  if (Number(inventoryRemaining) <= 0) return 'Sold out'
+const buildAvailabilityLabel = ({ isBookable, inventoryRemaining }) => {
+  if (!isBookable) return null
+  if (inventoryRemaining === null || inventoryRemaining === undefined) return 'At checkout'
+  if (Number(inventoryRemaining) <= 0) return null
   if (Number(inventoryRemaining) === 1) return '1 left'
   return `${inventoryRemaining} left`
 }
@@ -163,13 +194,17 @@ const mapOccurrencePackage = (eventPackage, occurrencePackage, family = null, oc
   const packageType = occurrencePackage?.package_type ?? eventPackage?.package_type ?? occurrencePackage?.eligibility?.package_type ?? family?.package_type ?? null
   const packageTypeLabel = occurrencePackage?.eligibility?.package_type_label ?? formatMetadataLabel(packageType)
   const familyName = family?.display_name ?? family?.name ?? eventPackage?.display_name ?? eventPackage?.name ?? occurrencePackage?.display_name ?? occurrencePackage?.name ?? null
-  const statusLabel = buildPackageStatusLabel({
-    status: availabilityStatus,
-    reasonLabel: occurrencePackage?.eligibility?.reason_label ?? occurrencePackage?.state?.decision_reason_label ?? null,
-    isBookable,
-  })
+  const unavailableReasonLabel = occurrencePackage?.eligibility?.reason_label ?? occurrencePackage?.state?.decision_reason_label ?? null
+  const cardStatusLabel = !isBookable
+    ? buildCustomerFacingCardStatusLabel({
+      status: availabilityStatus,
+      reasonLabel: unavailableReasonLabel,
+    })
+    : null
   const inventoryRemaining = effective?.inventory_remaining ?? null
-  const effectivePrice = toNumberOrNull(effective?.price)
+  const availabilityLabel = buildAvailabilityLabel({ isBookable, inventoryRemaining })
+  const pricingSummary = occurrencePackage?.pricing_summary ?? effective?.pricing_summary ?? null
+  const effectivePrice = toNumberOrNull(pricingSummary?.unit_price ?? effective?.price)
   const basePrice = toNumberOrNull(eventPackage?.base_price)
 
   return {
@@ -191,17 +226,38 @@ const mapOccurrencePackage = (eventPackage, occurrencePackage, family = null, oc
     displayName: familyName,
     description: eventPackage?.description ?? null,
     price: effectivePrice ?? basePrice,
-    originalPrice: basePrice,
+    originalPrice: toNumberOrNull(pricingSummary?.base_unit_price) ?? basePrice,
     maxGuests: eventPackage?.guest_count ?? occurrencePackage?.guest_count ?? null,
     features: [],
     popular: false,
-    paymentMode: occurrencePackage?.payment_mode ?? eventPackage?.payment_mode ?? null,
-    depositAmount: toNumberOrNull(occurrencePackage?.deposit_value ?? eventPackage?.deposit_value),
+    paymentMode: pricingSummary?.payment_mode ?? occurrencePackage?.payment_mode ?? eventPackage?.payment_mode ?? null,
+    depositAmount: toNumberOrNull(pricingSummary?.deposit?.due_now ?? occurrencePackage?.deposit_value ?? eventPackage?.deposit_value),
+    pricingSummary: pricingSummary
+      ? {
+          ...pricingSummary,
+          unit_price: toNumberOrNull(pricingSummary.unit_price),
+          base_unit_price: toNumberOrNull(pricingSummary.base_unit_price),
+          discount_amount: toNumberOrNull(pricingSummary.discount_amount),
+          line_total: toNumberOrNull(pricingSummary.line_total),
+          due_now: toNumberOrNull(pricingSummary.due_now),
+          due_later: toNumberOrNull(pricingSummary.due_later),
+          remaining_balance_amount: toNumberOrNull(pricingSummary.remaining_balance_amount),
+          deposit: pricingSummary.deposit
+            ? {
+                ...pricingSummary.deposit,
+                value: toNumberOrNull(pricingSummary.deposit.value),
+                due_now: toNumberOrNull(pricingSummary.deposit.due_now),
+              }
+            : null,
+        }
+      : null,
     availability: availabilityStatus,
     isBookable,
-    statusLabel,
+    statusLabel: cardStatusLabel,
+    cardStatusLabel,
     inventoryRemaining,
-    inventoryLabel: buildInventoryLabel({ isBookable, inventoryRemaining, statusLabel }),
+    availabilityLabel,
+    inventoryLabel: availabilityLabel,
     currency: occurrencePackage?.currency ?? eventPackage?.currency ?? null,
     guestCount: occurrencePackage?.guest_count ?? eventPackage?.guest_count ?? null,
     audienceCode: selectedVariant?.code ?? variantKey,
@@ -244,7 +300,7 @@ const buildFamilyCollection = ({ eventPackages = [], packageFamilies = [] }) => 
   return Array.from(families.values())
 }
 
-const mapOccurrence = (occurrence, eventPackages, eventPackageFamilies) => {
+export const mapOccurrence = (occurrence, eventPackages, eventPackageFamilies) => {
   const eventPackagesById = new Map((eventPackages || []).map((eventPackage) => [eventPackage?.event_package_id ?? eventPackage?.id, eventPackage]))
   const families = buildFamilyCollection({
     eventPackages,
@@ -271,9 +327,11 @@ const mapOccurrence = (occurrence, eventPackages, eventPackageFamilies) => {
   const isBookable = occurrence?.lifecycle?.is_bookable ?? BOOKABLE_OCCURRENCE_STATUSES.has(status)
 
   return {
-    id: occurrence?.event_occurrence_id ?? occurrence?.id ?? occurrence?.occurrence_date ?? null,
+    id: occurrence?.slot_key ?? occurrence?.occurrence_date ?? occurrence?.persisted_occurrence_id ?? occurrence?.id ?? null,
+    slotKey: occurrence?.slot_key ?? occurrence?.occurrence_date ?? null,
     occurrenceDate: occurrence?.occurrence_date ?? null,
-    eventOccurrenceId: occurrence?.event_occurrence_id ?? occurrence?.id ?? null,
+    eventOccurrenceId: occurrence?.persisted_occurrence_id ?? occurrence?.event_occurrence_id ?? occurrence?.id ?? null,
+    persistedOccurrenceId: occurrence?.persisted_occurrence_id ?? occurrence?.event_occurrence_id ?? occurrence?.id ?? null,
     date: occurrence?.occurrence_date ?? null,
     time: formatCatalogTimeRange(occurrence?.starts_at, occurrence?.ends_at),
     startsAt: occurrence?.starts_at ?? null,
@@ -302,6 +360,66 @@ const buildFallbackOccurrencesFromEvent = (event, eventPackageFamilies) => {
   }, event?.packages || [], eventPackageFamilies))
 }
 
+const getSortOrder = (value) => {
+  const numericValue = toNumberOrNull(value)
+  return numericValue === null ? Number.POSITIVE_INFINITY : numericValue
+}
+
+const sortByRenderOrder = (left, right) => {
+  const leftOrder = getSortOrder(left?.render_order ?? left?.sort_order)
+  const rightOrder = getSortOrder(right?.render_order ?? right?.sort_order)
+
+  if (leftOrder !== rightOrder) return leftOrder - rightOrder
+
+  return String(left?.label ?? left?.name ?? left?.key ?? '').localeCompare(String(right?.label ?? right?.name ?? right?.key ?? ''))
+}
+
+const mapEventOffering = (offeringGroup) => {
+  const group = offeringGroup?.group ?? null
+  const values = Array.isArray(offeringGroup?.values)
+    ? offeringGroup.values
+      .filter((selection) => {
+        const status = String(selection?.status ?? '').toLowerCase()
+        const isAssigned = selection?.is_assigned
+        const isActive = selection?.is_active
+        const isSelectable = selection?.is_selectable
+
+        if (isAssigned === false || isActive === false || isSelectable === false) return false
+        if (status && status !== 'active' && status !== 'published') return false
+        return Boolean(selection?.value)
+      })
+      .sort((left, right) => sortByRenderOrder(left?.value, right?.value))
+      .map((selection) => ({
+        id: selection?.value?.id ?? null,
+        key: selection?.value?.key ?? null,
+        label: selection?.value?.label ?? selection?.value?.name ?? selection?.value?.slug ?? null,
+      }))
+      .filter((value) => value.label)
+    : []
+
+  if (!group || values.length === 0) return null
+
+  return {
+    id: group.id ?? null,
+    key: group.key ?? null,
+    label: group.label ?? group.name ?? group.slug ?? 'Offering',
+    badgeLabel: group.icon_badge?.badge_label ?? group.badge_label ?? null,
+    items: values,
+  }
+}
+
+const mapEventFaq = (assignment) => {
+  const faq = assignment?.faq ?? null
+  if (!faq?.question || !faq?.answer) return null
+
+  return {
+    id: faq.id ?? assignment?.venue_faq_id ?? null,
+    question: faq.question,
+    answer: faq.answer,
+    sortOrder: getSortOrder(assignment?.sort_order ?? faq?.sort_order),
+  }
+}
+
 export const mapEventDetail = (event, availabilityPayload) => {
   const base = mapEventBase(event)
   if (!base) return null
@@ -325,21 +443,24 @@ export const mapEventDetail = (event, availabilityPayload) => {
     highlights: [],
     policies: [],
     accessibility: [],
-    faqs: (event.faqs || []).map((entry) => entry?.faq).filter(Boolean),
+    offerings: (event.offerings || []).map(mapEventOffering).filter(Boolean).sort(sortByRenderOrder),
+    faqs: (event.faqs || []).map(mapEventFaq).filter(Boolean).sort((left, right) => left.sortOrder - right.sortOrder),
     contact: null,
+    dressCode: null,
     venueDetails: {
       id: event.venue?.id ?? event.venue_id ?? null,
       name: event.venue?.name ?? null,
       description: event.venue?.short_description ?? null,
       address: [
-        event.venue?.name,
-        event.venue?.area?.name,
         event.venue?.location?.formatted_address,
         event.venue?.location?.address_line_1,
-      ].filter(Boolean).join(', ') || null,
+        event.venue?.area?.name,
+      ].filter(Boolean)[0] ?? null,
+      area: event.venue?.area?.name ?? null,
       phone: null,
       website: null,
       amenities: [],
+      mapLinks: event.venue?.location?.map_links ?? null,
     },
     occurrences,
     packages: primaryOccurrence?.packages || [],

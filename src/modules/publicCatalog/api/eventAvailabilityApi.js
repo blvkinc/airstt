@@ -39,8 +39,8 @@ export const getPublicEventAvailability = async ({ eventId, filters = {}, signal
   return normalizePublicEventAvailabilityResponse(payload)
 }
 
-export const getPublicOccurrenceAvailability = async ({ eventId, occurrenceDate, filters = {}, signal } = {}) => {
-  const payload = await get(publicApi.events.availabilityDetail(eventId, occurrenceDate), {
+export const getPublicOccurrenceAvailability = async ({ eventId, slotKey, filters = {}, signal } = {}) => {
+  const payload = await get(publicApi.events.availabilityDetail(eventId, slotKey), {
     query: pickFilters(filters, PUBLIC_EVENT_AVAILABILITY_FILTER_KEYS),
     signal,
     credentials: 'omit',

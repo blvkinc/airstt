@@ -59,6 +59,18 @@ const normalizePublicEventMedia = (media) => {
   }
 }
 
+const normalizePublicEventMediaPreview = (media) => {
+  if (!isPlainObject(media)) return null
+
+  return {
+    ...media,
+    id: media.id ?? null,
+    media_type: media.media_type ?? null,
+    purpose: media.purpose ?? null,
+    asset_url: media.asset_url ?? null,
+  }
+}
+
 const normalizePublicEventFaqAssignment = (assignment) => {
   if (!isPlainObject(assignment)) return null
 
@@ -172,6 +184,53 @@ const normalizePublicEventMeta = (meta) => {
   }
 }
 
+const normalizePublicEventPrimaryCategory = (category) => {
+  if (!isPlainObject(category)) return null
+
+  return {
+    ...category,
+    id: category.id ?? null,
+    name: category.name ?? null,
+    slug: category.slug ?? null,
+    sort_order: category.sort_order ?? null,
+  }
+}
+
+const normalizePublicEventAttributes = (attributes) => {
+  if (!isPlainObject(attributes)) return null
+
+  return {
+    ...attributes,
+    service_period: attributes.service_period ?? null,
+    environment_type: attributes.environment_type ?? null,
+    display_rating: attributes.display_rating ?? null,
+    is_family_friendly: attributes.is_family_friendly ?? null,
+    is_animal_friendly: attributes.is_animal_friendly ?? null,
+  }
+}
+
+const normalizePublicEventListSummary = (summary) => {
+  if (!isPlainObject(summary)) return null
+
+  return {
+    ...summary,
+    price_from: summary.price_from ?? null,
+    currency: summary.currency ?? null,
+    next_occurrence: normalizePublicEventOccurrenceAvailability(summary.next_occurrence),
+    next_bookable_occurrence: normalizePublicEventOccurrenceAvailability(summary.next_bookable_occurrence),
+    availability_status: summary.availability_status ?? null,
+  }
+}
+
+const normalizePublicEventEditorial = (editorial) => {
+  if (!isPlainObject(editorial)) return null
+
+  return {
+    ...editorial,
+    sort_order: editorial.sort_order ?? null,
+  }
+}
+
 const normalizePublicEventRecurrenceRule = (rule) => {
   if (!isPlainObject(rule)) return null
 
@@ -222,7 +281,12 @@ export const normalizePublicEvent = (event) => {
     is_family_friendly: event.is_family_friendly ?? null,
     is_animal_friendly: event.is_animal_friendly ?? null,
     publication_state: event.publication_state ?? null,
-    editorial_sort_order: event.editorial_sort_order ?? null,
+    editorial_sort_order: event.editorial_sort_order ?? event.editorial?.sort_order ?? null,
+    media_preview: normalizePublicEventMediaPreview(event.media_preview),
+    primary_category: normalizePublicEventPrimaryCategory(event.primary_category),
+    attributes: normalizePublicEventAttributes(event.attributes),
+    list_summary: normalizePublicEventListSummary(event.list_summary),
+    editorial: normalizePublicEventEditorial(event.editorial),
     categories: Array.isArray(event.categories)
       ? event.categories.map(normalizePublicEventCategoryAssignment).filter(Boolean)
       : [],

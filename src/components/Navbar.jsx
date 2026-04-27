@@ -29,7 +29,7 @@ const Navbar = () => {
   }, [])
 
   useEffect(() => {
-    const whiteBackgroundPages = ['/auth', '/profile', '/premium', '/review', '/cart']
+    const whiteBackgroundPages = ['/auth', '/profile', '/premium', '/cart']
     const isWhitePage = whiteBackgroundPages.some(page => location.pathname.startsWith(page)) ||
       location.pathname.includes('/events/') ||
       location.pathname.includes('/venues/') ||

@@ -1,58 +1,59 @@
-import { Link } from 'react-router-dom'
-import { Globe, MapPin, Phone } from 'lucide-react'
-import { Badge } from '../../../../shared/ui/badge'
-import { Button } from '../../../../shared/ui/button'
+import { Globe, MapPin } from 'lucide-react'
+
+const getPrimaryMapLink = (mapLinks) => {
+  if (!mapLinks || typeof mapLinks !== 'object') return null
+
+  return mapLinks.google
+    || mapLinks.google_maps
+    || mapLinks.apple
+    || mapLinks.apple_maps
+    || mapLinks.website
+    || null
+}
 
 export function EventVenue({ event }) {
+  const venueName = event.venueDetails?.name || event.venue || 'Venue details'
+  const locationText = event.venueDetails?.address || event.location || 'Location details will be shared after booking is confirmed.'
+  const locationContext = [event.venueDetails?.area, event.location].filter(Boolean)
+  const primaryMapLink = getPrimaryMapLink(event.venueDetails?.mapLinks)
+
   return (
-    <div className="space-y-8">
-      <div className="rounded-3xl border border-gray-100 bg-white p-8 shadow-sm">
-        <h2 className="mb-6 text-2xl font-bold text-gray-900">{event.venueDetails?.name || event.venue}</h2>
-        <p className="mb-8 text-lg leading-relaxed text-gray-600">{event.venueDetails?.description || 'Venue details are limited in the current public catalog.'}</p>
-
-        <div className="grid grid-cols-1 gap-8 md:grid-cols-2">
-          <div className="space-y-6">
-            <div className="flex items-center gap-3 text-gray-700">
-              <MapPin className="h-5 w-5 text-gray-400" />
-              <span>{event.venueDetails?.address || event.location}</span>
-            </div>
-            {(event.venueDetails?.phone || event.contact?.phone) && <div className="flex items-center gap-3 text-gray-700">
-              <Phone className="h-5 w-5 text-gray-400" />
-              <span>{event.venueDetails?.phone || event.contact?.phone}</span>
-            </div>}
-            {event.venueDetails?.website && <div className="flex items-center gap-3 text-gray-700">
-              <Globe className="h-5 w-5 text-gray-400" />
-              <a href={`http://${event.venueDetails?.website}`} target="_blank" rel="noopener noreferrer" className="hover:underline">
-                {event.venueDetails?.website}
-              </a>
-            </div>}
-          </div>
-
-          <div className="space-y-4">
-            <h3 className="font-semibold text-gray-900">Amenities</h3>
-            <div className="flex flex-wrap gap-2">
-              {event.venueDetails?.amenities?.map((amenity) => (
-                <Badge key={amenity} variant="secondary" className="bg-gray-100 font-normal text-gray-700">
-                  {amenity}
-                </Badge>
-              ))}
+    <section className="rounded-3xl border border-gray-100 bg-white p-6 shadow-sm sm:p-8" aria-labelledby="event-venue-heading">
+      <h2 id="event-venue-heading" className="text-2xl font-bold text-gray-900">Where you’ll be</h2>
+      <div className="mt-6 space-y-6">
+        <div className="rounded-2xl border border-gray-100 bg-gray-50 p-5">
+          <div className="flex items-start gap-3">
+            <MapPin className="mt-1 h-5 w-5 shrink-0 text-gray-900" />
+            <div>
+              <h3 className="text-lg font-semibold text-gray-900">{venueName}</h3>
+              <p className="mt-2 text-sm leading-6 text-gray-600">{locationText}</p>
+              {locationContext.length > 0 && <p className="mt-2 text-sm text-gray-500">{locationContext.join(' • ')}</p>}
             </div>
           </div>
         </div>
 
-        {event.mapImage && <div className="mt-8">
-          <h3 className="mb-3 font-semibold text-gray-900">Location Map</h3>
-          <div className="overflow-hidden rounded-2xl border border-gray-100 shadow-sm">
-            <img src={event.mapImage} alt="Venue map" className="h-56 w-full object-cover" />
+        {event.venueDetails?.description && (
+          <div>
+            <h3 className="text-lg font-semibold text-gray-900">About the venue</h3>
+            <p className="mt-3 text-sm leading-7 text-gray-600 sm:text-base">{event.venueDetails.description}</p>
           </div>
-        </div>}
+        )}
 
-        <div className="mt-8 border-t border-gray-100 pt-8">
-          <Link to={`/venues/${event.venueId || event.id}`}>
-            <Button className="rounded-full bg-gray-900 px-8 text-white hover:bg-black">View Full Venue Details</Button>
-          </Link>
-        </div>
+        {primaryMapLink && (
+          <div>
+            <h3 className="text-lg font-semibold text-gray-900">Getting there</h3>
+            <a
+              href={primaryMapLink}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="mt-3 inline-flex items-center gap-2 rounded-full border border-gray-200 px-4 py-2 text-sm font-medium text-gray-700 transition-colors hover:border-gray-300 hover:text-gray-900"
+            >
+              <Globe className="h-4 w-4" />
+              Open location in maps
+            </a>
+          </div>
+        )}
       </div>
-    </div>
+    </section>
   )
 }
