@@ -1,81 +1,141 @@
-import { useMemo, useRef, useState } from 'react'
+import { useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { Calendar } from 'lucide-react'
-import { motion } from 'framer-motion'
+import { SlidersHorizontal } from 'lucide-react'
 import { useEventCategoriesCatalog, useEventsCatalog } from '../features/catalog'
 import { matchesSelectedEventCategory, normalizeSelectedEventCategory } from '../features/catalog/utils/eventCategorySelection'
-import EventCard from '../features/events/components/EventCard'
-import DiscoveryResultsHeader from '../features/explore/components/DiscoveryResultsHeader'
-import DiscoverySearchHero from '../features/explore/components/DiscoverySearchHero'
-import { trendingEvents as trendingEventFixtures } from '../features/experiences/data'
-import { Button } from '../shared/ui/button'
-import { Card, CardContent } from '../shared/ui/card'
+import { SttEventTile, SttPageHeader, SttRail, SttRailItem } from '../components/SttDiscovery'
+
+const getCategoryLabel = (category) => category?.displayName || category?.name || category?.label || String(category || '')
+
+const eventMatchesTerms = (event, terms) => {
+  const text = [
+    event.title,
+    event.category,
+    event.type,
+    event.location,
+    event.venue,
+    event.dayPeriod,
+    ...(event.tags || []),
+  ].join(' ').toLowerCase()
+
+  return terms.some((term) => text.includes(term))
+}
 
 const EventsPage = () => {
   const [searchTerm, setSearchTerm] = useState('')
   const [selectedCategory, setSelectedCategory] = useState(null)
-  const resultsRef = useRef(null)
   const { data: events = [], loading, error, retry } = useEventsCatalog(searchTerm)
   const { data: eventCategories = [] } = useEventCategoriesCatalog()
 
   const filteredEvents = useMemo(() => events.filter((event) => matchesSelectedEventCategory(event, selectedCategory, {
     primaryText: event.category,
-    fallbackText: [event.title, ...(event.tags || [])],
+    fallbackText: [event.title, event.location, event.venue, ...(event.tags || [])],
   })), [events, selectedCategory])
 
+  const brunchEvents = useMemo(() => filteredEvents.filter((event) => eventMatchesTerms(event, ['brunch', 'day', 'lunch'])), [filteredEvents])
+  const nightlifeEvents = useMemo(() => filteredEvents.filter((event) => eventMatchesTerms(event, ['night', 'evening', 'party', 'dj'])), [filteredEvents])
+  const poolEvents = useMemo(() => filteredEvents.filter((event) => eventMatchesTerms(event, ['pool', 'beach', 'club'])), [filteredEvents])
+  const hasActiveFilter = Boolean(searchTerm || selectedCategory)
+
+  const renderEventRail = (items, badge = 'Featured') => items.map((event) => (
+    <SttRailItem key={event.id}>
+      <SttEventTile event={event} badge={badge} />
+    </SttRailItem>
+  ))
+
+  const handleApplySearch = ({ keyword = '', location = '', category = '' } = {}) => {
+    const nextTerm = (keyword || category || location || '').trim()
+    setSearchTerm(nextTerm)
+
+    if (category) {
+      const match = eventCategories.find((item) => getCategoryLabel(item).toLowerCase() === category.toLowerCase())
+      setSelectedCategory(match ? normalizeSelectedEventCategory(match) : null)
+    }
+  }
+
+  const handleCategorySelect = (category) => {
+    setSelectedCategory((current) => current?.id === category.id ? null : normalizeSelectedEventCategory(category))
+  }
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-orange-50 via-white to-purple-50">
-      <DiscoverySearchHero
-        backgroundImage="https://images.unsplash.com/photo-1551218808-94e220e084d2?w=1920&h=1080&fit=crop"
-        backgroundAlt="Dubai Events"
-        title="Discover Events"
-        description="Find amazing experiences and events"
-        searchPlaceholder="Search events..."
-        searchTerm={searchTerm}
-        onSearchTermChange={setSearchTerm}
-        onSearch={() => resultsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
-        onSearchKeyDown={(e) => e.key === 'Enter' && resultsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
-        searchButtonClassName="rounded-full px-4 sm:px-8 h-10 sm:h-12 text-sm sm:text-base font-semibold text-white shadow-lg shrink-0 ml-2 hover:opacity-90 transition-opacity"
-        searchButtonStyle={{ background: 'linear-gradient(to right, #A76DB7, #6CB5F8)' }}
-        categoryItems={eventCategories}
-        selectedCategory={selectedCategory}
-        onCategorySelect={(category) => setSelectedCategory((current) => current?.id === category.id ? null : normalizeSelectedEventCategory(category))}
-        selectedCategoryClassName="flex items-center px-4 py-2 rounded-full text-sm font-medium transition-all duration-300 bg-white text-brand-purple shadow-lg"
-        categoryClassName="flex items-center px-4 py-2 rounded-full text-sm font-medium transition-all duration-300 bg-white/20 backdrop-blur-sm border border-white/30 text-white hover:bg-white/30"
-      />
+    <div className="min-h-screen bg-white pb-20 text-gray-950 md:pb-0">
+      <SttPageHeader mode="events" searchTerm={searchTerm} onApplySearch={handleApplySearch} />
 
-      <section ref={resultsRef} className="py-20 px-4 sm:px-6 lg:px-8 bg-white/50 scroll-target">
-        <div className="max-w-7xl mx-auto">
-          <DiscoveryResultsHeader
-            title={selectedCategory || searchTerm ? 'Search Results' : 'Upcoming Events'}
-            description={loading ? 'Loading events...' : selectedCategory || searchTerm ? `Found ${filteredEvents.length} events` : "Don't miss these amazing experiences"}
-            ctaLabel="View All Events"
-            ctaTo="/explore"
-          />
-
-          {loading && <Card><CardContent className="py-16 text-center text-gray-600">Loading live event catalog...</CardContent></Card>}
-          {error && !loading && <Card><CardContent className="py-16 text-center"><h3 className="text-2xl font-bold text-gray-900 mb-2">Couldn't load events</h3><p className="text-gray-600 mb-6">{error.message}</p><Button onClick={retry}>Try again</Button></CardContent></Card>}
-          {!loading && !error && filteredEvents.length > 0 && <motion.div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>{filteredEvents.map((event) => <EventCard key={event.id} event={event} />)}</motion.div>}
-          {!loading && !error && filteredEvents.length === 0 && <Card className="text-center py-16"><CardContent><div className="text-6xl mb-4">🔍</div><h3 className="text-2xl font-bold text-gray-900 mb-2">No events found</h3><p className="text-gray-600 mb-6">Try adjusting your search criteria.</p><div className="flex gap-4 justify-center"><Button onClick={() => { setSearchTerm(''); setSelectedCategory('') }}>Clear Filters</Button><Button variant="outline" asChild><Link to="/explore">Browse Explore</Link></Button></div></CardContent></Card>}
-        </div>
-      </section>
-
-      <section className="py-20 px-4 sm:px-6 lg:px-8 bg-gray-50">
-        <div className="max-w-7xl mx-auto">
-          <div className="mb-16"><h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">Trending experiences</h2><p className="text-xl text-gray-600">Prototype editorial rail, separate from live search results</p></div>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">{trendingEventFixtures.map((event) => <EventCard key={event.id} event={event} />)}</div>
-        </div>
-      </section>
-
-      <section className="py-20 px-4 sm:px-6 lg:px-8 bg-gray-50">
-        <div className="max-w-4xl mx-auto text-center">
-          <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-6">Ready to book your next experience?</h2>
-          <p className="text-xl text-gray-600 mb-8 max-w-2xl mx-auto">Join thousands of satisfied customers who trust Set The Table for their special moments</p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Button size="lg" className="bg-gray-900 hover:bg-gray-800 text-white" asChild><Link to="/explore"><Calendar className="w-5 h-5 mr-2" />Browse All Events</Link></Button>
+      <main className="mx-auto mt-8 w-full max-w-6xl px-5 md:mt-11 md:px-8">
+        <div className="mb-6 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+          <div>
+            <p className="text-xs font-extrabold uppercase tracking-[0.28em] text-brand-purple">Events</p>
+            <h1 className="mt-2 text-3xl font-extrabold tracking-tight text-gray-950 md:text-4xl">Featured Events</h1>
+            <p className="mt-2 max-w-2xl text-sm font-medium text-gray-500">
+              Brunches, nightlife, day parties, and hosted moments across Dubai.
+            </p>
           </div>
+          <Link to="/?search=open" className="inline-flex w-fit items-center gap-2 rounded-full border border-gray-200 bg-white px-4 py-2 text-xs font-extrabold text-gray-700 shadow-sm">
+            <SlidersHorizontal className="h-4 w-4" strokeWidth={1.8} />
+            Advanced Filters
+          </Link>
         </div>
-      </section>
+
+        {eventCategories.length > 0 && (
+          <div className="no-scrollbar mb-8 flex gap-2 overflow-x-auto pb-2">
+            {eventCategories.map((category) => {
+              const isSelected = selectedCategory?.id === category.id
+
+              return (
+                <button
+                  key={category.id}
+                  type="button"
+                  onClick={() => handleCategorySelect(category)}
+                  className={`shrink-0 rounded-full px-3 py-2 text-xs font-extrabold shadow-sm ring-1 transition-colors ${isSelected ? 'bg-brand-purple text-white ring-brand-purple' : 'bg-white text-gray-700 ring-gray-200 hover:text-brand-purple'}`}
+                >
+                  {getCategoryLabel(category)}
+                </button>
+              )
+            })}
+          </div>
+        )}
+
+        {loading && <div className="rounded-[18px] bg-gray-50 p-10 text-center text-sm font-semibold text-gray-500 ring-1 ring-black/5">Loading demo event catalog...</div>}
+        {error && !loading && (
+          <div className="rounded-[18px] bg-gray-50 p-10 text-center ring-1 ring-black/5">
+            <h2 className="text-xl font-extrabold text-gray-950">Couldn't load events</h2>
+            <p className="mt-2 text-sm text-gray-500">{error.message}</p>
+            <button type="button" onClick={retry} className="mt-5 rounded-full bg-brand-purple px-4 py-2 text-xs font-extrabold text-white">Try again</button>
+          </div>
+        )}
+        {!loading && !error && filteredEvents.length > 0 && (
+          <div className="space-y-10">
+            <SttRail title={hasActiveFilter ? 'Search Results' : 'Events in Dubai'} actionTo="/events">
+              {renderEventRail(filteredEvents, hasActiveFilter ? 'Match' : 'Featured')}
+            </SttRail>
+
+            {!hasActiveFilter && brunchEvents.length > 0 && (
+              <SttRail title="Brunches This Week" actionTo="/events">
+                {renderEventRail(brunchEvents, 'Brunch')}
+              </SttRail>
+            )}
+
+            {!hasActiveFilter && nightlifeEvents.length > 0 && (
+              <SttRail title="Nightlife Events" actionTo="/events">
+                {renderEventRail(nightlifeEvents, 'Night')}
+              </SttRail>
+            )}
+
+            {!hasActiveFilter && poolEvents.length > 0 && (
+              <SttRail title="Pool and Beach Events" actionTo="/events">
+                {renderEventRail(poolEvents, 'Popular')}
+              </SttRail>
+            )}
+          </div>
+        )}
+        {!loading && !error && filteredEvents.length === 0 && (
+          <div className="rounded-[18px] bg-gray-50 p-10 text-center ring-1 ring-black/5">
+            <h2 className="text-xl font-extrabold text-gray-950">No events found</h2>
+            <p className="mt-2 text-sm text-gray-500">Try a different keyword, location, or category.</p>
+            <button type="button" onClick={() => { setSearchTerm(''); setSelectedCategory(null) }} className="mt-5 rounded-full bg-brand-purple px-4 py-2 text-xs font-extrabold text-white">Clear Filters</button>
+          </div>
+        )}
+      </main>
     </div>
   )
 }

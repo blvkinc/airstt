@@ -1,60 +1,48 @@
-import { useState, useRef, useEffect } from 'react'
+import { useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { Building, Trophy, HeadphonesIcon } from 'lucide-react'
-import { motion } from 'framer-motion'
-import { Button } from '../shared/ui/button'
-import { Card, CardContent } from '../shared/ui/card'
-import DiscoveryResultsHeader from '../features/explore/components/DiscoveryResultsHeader'
-import DiscoverySearchHero from '../features/explore/components/DiscoverySearchHero'
-import VenueCard from '../features/venues/components/VenueCard'
+import { Building, MapPin, SlidersHorizontal } from 'lucide-react'
 import { useVenueTypesCatalog, useVenuesCatalog } from '../features/catalog'
 import { topVenueLocations } from '../features/experiences/data'
+import { SttPageHeader, SttRail, SttRailItem, SttSectionHeader, SttVenueTile } from '../components/SttDiscovery'
 
-const smoothScrollTo = (element, offset = 80) => {
-  if (!element) return
+const getVenueTypeLabel = (venueType) => venueType?.displayName || venueType?.name || venueType?.label || String(venueType || '')
 
-  const elementPosition = element.getBoundingClientRect().top + window.pageYOffset
-  const offsetPosition = elementPosition - offset
+const venueMatchesTerms = (venue, terms) => {
+  const text = [
+    venue.name,
+    venue.category,
+    venue.type,
+    venue.location,
+    venue.address,
+    venue.area,
+    ...(venue.highlights || []),
+  ].join(' ').toLowerCase()
 
-  window.scrollTo({ top: offsetPosition, behavior: 'smooth' })
+  return terms.some((term) => text.includes(term))
 }
 
 const VenuesPage = () => {
   const [searchTerm, setSearchTerm] = useState('')
   const [selectedVenueTypeIds, setSelectedVenueTypeIds] = useState([])
-  const resultsRef = useRef(null)
-
-  useEffect(() => {
-    if ((searchTerm || selectedVenueTypeIds.length > 0) && resultsRef.current) {
-      setTimeout(() => smoothScrollTo(resultsRef.current, 100), 150)
-    }
-  }, [searchTerm, selectedVenueTypeIds])
-
-  const handleSearch = () => {
-    if (resultsRef.current) {
-      setTimeout(() => smoothScrollTo(resultsRef.current, 100), 150)
-    }
-  }
-
-  const handleKeyPress = (e) => {
-    if (e.key === 'Enter') {
-      handleSearch()
-    }
-  }
-
+  const [showTags, setShowTags] = useState(false)
   const { data: venueTypesResponse, loading: venueTypesLoading } = useVenueTypesCatalog()
   const { data: venues = [], loading, error, retry } = useVenuesCatalog(searchTerm, selectedVenueTypeIds)
-  const venueTypes = Array.isArray(venueTypesResponse) ? venueTypesResponse : []
+  const venueTypes = useMemo(() => Array.isArray(venueTypesResponse) ? venueTypesResponse : [], [venueTypesResponse])
 
-  const venueCategories = venueTypes.map((venueType) => ({
-    id: venueType.id,
-    name: venueType.name,
-  }))
-
-  const selectedCategoryLabel = venueTypes
+  const selectedCategoryLabel = useMemo(() => venueTypes
     .filter((venueType) => selectedVenueTypeIds.includes(venueType.id))
     .map((venueType) => venueType.name)
-    .join(', ')
+    .join(', '), [selectedVenueTypeIds, venueTypes])
+  const hasActiveFilter = Boolean(searchTerm || selectedVenueTypeIds.length)
+  const beachVenues = useMemo(() => venues.filter((venue) => venueMatchesTerms(venue, ['beach', 'pool', 'club'])), [venues])
+  const rooftopVenues = useMemo(() => venues.filter((venue) => venueMatchesTerms(venue, ['roof', 'lounge', 'sky'])), [venues])
+  const restaurantVenues = useMemo(() => venues.filter((venue) => venueMatchesTerms(venue, ['restaurant', 'dining', 'fine'])), [venues])
+
+  const renderVenueRail = (items, badge = 'Featured') => items.map((venue) => (
+    <SttRailItem key={venue.id} variant="venue">
+      <SttVenueTile venue={venue} badge={badge} />
+    </SttRailItem>
+  ))
 
   const handleCategorySelect = (category) => {
     setSelectedVenueTypeIds((current) => current.includes(category.id)
@@ -62,81 +50,136 @@ const VenuesPage = () => {
       : [...current, category.id])
   }
 
-  const venueFeatures = [
-    { icon: Building, title: '150+ Premium Venues', description: "Carefully curated selection of Dubai's finest venues" },
-    { icon: Trophy, title: 'Quality Verified', description: 'All venues are inspected and quality-certified' },
-    { icon: HeadphonesIcon, title: 'Expert Support', description: 'Dedicated team to help you find the perfect venue' },
-  ]
+  const handleApplySearch = ({ keyword = '', location = '', category = '' } = {}) => {
+    const nextTerm = (keyword || category || location || '').trim()
+    setSearchTerm(nextTerm)
 
-  const topLocations = topVenueLocations
+    if (category) {
+      const match = venueTypes.find((item) => getVenueTypeLabel(item).toLowerCase() === category.toLowerCase())
+      if (match) setSelectedVenueTypeIds([match.id])
+    }
+  }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-brand-purple/10 via-white to-brand-blue/10">
-      <DiscoverySearchHero
-        backgroundImage="https://images.unsplash.com/photo-1540541338287-41700207dee6?w=1920&h=1080&fit=crop"
-        backgroundAlt="Dubai Venues"
-        title="Find Venues"
-        description="Discover perfect spaces for your events"
-        searchPlaceholder="Search venues..."
-        searchTerm={searchTerm}
-        onSearchTermChange={setSearchTerm}
-        onSearch={handleSearch}
-        onSearchKeyDown={handleKeyPress}
-        searchButtonClassName="rounded-full px-4 sm:px-8 h-10 sm:h-12 text-sm sm:text-base font-semibold text-white shadow-lg shrink-0 ml-2 hover:opacity-90 transition-opacity"
-        searchButtonStyle={{ background: 'linear-gradient(to right, #6CB5F8, #A76DB7)' }}
-        categoryItems={venueCategories}
-        selectedCategory={selectedVenueTypeIds}
-        onCategorySelect={handleCategorySelect}
-        selectedCategoryClassName="px-4 py-2 rounded-full text-sm font-medium transition-all duration-300 flex items-center bg-white text-brand-blue shadow-lg"
-        categoryClassName="px-4 py-2 rounded-full text-sm font-medium transition-all duration-300 flex items-center bg-white/20 backdrop-blur-sm border border-white/30 text-white hover:bg-white/30"
-      />
+    <div className="min-h-screen bg-white pb-20 text-gray-950 md:pb-0">
+      <SttPageHeader mode="venues" searchTerm={searchTerm} onApplySearch={handleApplySearch} />
 
-      <section ref={resultsRef} className="py-20 px-4 sm:px-6 lg:px-8 bg-white/50 scroll-target">
-        <div className="max-w-7xl mx-auto">
-          <DiscoveryResultsHeader
-            title={selectedCategoryLabel || searchTerm ? 'Search Results' : 'Featured Venues'}
-            description={selectedCategoryLabel || searchTerm ? `Found ${venues.length} venues${selectedCategoryLabel ? ` for ${selectedCategoryLabel}` : ''}` : 'Handpicked premium venues for your events'}
-            ctaLabel="View All Venues"
-            ctaTo="/explore"
-          />
+      <main className="mx-auto mt-8 w-full max-w-6xl px-5 md:mt-11 md:px-8">
+        <div className="mb-6 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+          <div>
+            <p className="text-xs font-extrabold uppercase tracking-[0.28em] text-brand-purple">Venues</p>
+            <h1 className="mt-2 text-3xl font-extrabold tracking-tight text-gray-950 md:text-4xl">Popular Venues</h1>
+            <p className="mt-2 max-w-2xl text-sm font-medium text-gray-500">
+              Restaurants, beach clubs, rooftops, and private spaces ready for your next plan.
+            </p>
+          </div>
+          <button type="button" onClick={() => setShowTags((value) => !value)} className="inline-flex w-fit items-center gap-2 rounded-full border border-gray-200 bg-white px-4 py-2 text-xs font-extrabold text-gray-700 shadow-sm">
+            <SlidersHorizontal className="h-4 w-4" strokeWidth={1.8} />
+            Venue Tags
+          </button>
+        </div>
 
-          {selectedVenueTypeIds.length > 0 && (
-            <div className="mb-6 flex flex-wrap gap-2">
-              {venueTypes.filter((venueType) => selectedVenueTypeIds.includes(venueType.id)).map((venueType) => (
+        {(showTags || selectedVenueTypeIds.length > 0) && venueTypes.length > 0 && (
+          <div className="no-scrollbar mb-8 flex gap-2 overflow-x-auto pb-2">
+            {venueTypes.map((venueType) => {
+              const isSelected = selectedVenueTypeIds.includes(venueType.id)
+
+              return (
                 <button
                   key={venueType.id}
                   type="button"
                   onClick={() => handleCategorySelect(venueType)}
-                  className="rounded-full bg-brand-purple/10 px-3 py-1 text-sm font-medium text-brand-purple"
+                  className={`shrink-0 rounded-full px-3 py-2 text-xs font-extrabold shadow-sm ring-1 transition-colors ${isSelected ? 'bg-brand-purple text-white ring-brand-purple' : 'bg-white text-gray-700 ring-gray-200 hover:text-brand-purple'}`}
                 >
-                  {venueType.name} ×
+                  {getVenueTypeLabel(venueType)}
                 </button>
-              ))}
+              )
+            })}
+          </div>
+        )}
+
+        {selectedCategoryLabel && (
+          <div className="mb-6 rounded-[18px] bg-brand-purple/5 px-4 py-3 text-sm font-semibold text-gray-700 ring-1 ring-brand-purple/10">
+            Showing venues tagged: <span className="font-extrabold text-brand-purple">{selectedCategoryLabel}</span>
+          </div>
+        )}
+
+        {(loading || venueTypesLoading) && <div className="rounded-[18px] bg-gray-50 p-10 text-center text-sm font-semibold text-gray-500 ring-1 ring-black/5">Loading demo venue catalog...</div>}
+        {error && !loading && !venueTypesLoading && (
+          <div className="rounded-[18px] bg-gray-50 p-10 text-center ring-1 ring-black/5">
+            <h2 className="text-xl font-extrabold text-gray-950">Couldn't load venues</h2>
+            <p className="mt-2 text-sm text-gray-500">{error.message}</p>
+            <button type="button" onClick={retry} className="mt-5 rounded-full bg-brand-purple px-4 py-2 text-xs font-extrabold text-white">Try again</button>
+          </div>
+        )}
+        {!loading && !venueTypesLoading && !error && venues.length > 0 && (
+          <div className="space-y-10">
+            <SttRail title={hasActiveFilter ? 'Search Results' : 'Popular Venues in Dubai'} actionTo="/venues">
+              {renderVenueRail(venues, hasActiveFilter ? 'Match' : 'Featured')}
+            </SttRail>
+
+            {!hasActiveFilter && beachVenues.length > 0 && (
+              <SttRail title="Beach Clubs" actionTo="/venues">
+                {renderVenueRail(beachVenues, 'Beach')}
+              </SttRail>
+            )}
+
+            {!hasActiveFilter && rooftopVenues.length > 0 && (
+              <SttRail title="Rooftops and Lounges" actionTo="/venues">
+                {renderVenueRail(rooftopVenues, 'Rooftop')}
+              </SttRail>
+            )}
+
+            {!hasActiveFilter && restaurantVenues.length > 0 && (
+              <SttRail title="Restaurants and Dining" actionTo="/venues">
+                {renderVenueRail(restaurantVenues, 'Dining')}
+              </SttRail>
+            )}
+          </div>
+        )}
+        {!loading && !venueTypesLoading && !error && venues.length === 0 && (
+          <div className="rounded-[18px] bg-gray-50 p-10 text-center ring-1 ring-black/5">
+            <h2 className="text-xl font-extrabold text-gray-950">No venues found</h2>
+            <p className="mt-2 text-sm text-gray-500">Try a different location or venue category.</p>
+            <button type="button" onClick={() => { setSearchTerm(''); setSelectedVenueTypeIds([]) }} className="mt-5 rounded-full bg-brand-purple px-4 py-2 text-xs font-extrabold text-white">Clear Filters</button>
+          </div>
+        )}
+
+        <section className="mt-12">
+          <SttSectionHeader title="Popular Locations" />
+          <div className="mobile-rail-fade no-scrollbar -mx-5 flex w-screen max-w-[100vw] snap-x snap-mandatory gap-3 overflow-x-auto overscroll-x-contain px-5 pb-4 scroll-px-5 md:mx-0 md:w-full md:max-w-full md:gap-5 md:px-0 md:scroll-px-0">
+            {topVenueLocations.map((location) => (
+              <Link key={location.name} to={`/explore?tab=venues&location=${encodeURIComponent(location.name)}`} className="block w-[154px] shrink-0 snap-start md:w-[190px]">
+                <div className="aspect-[1.08] overflow-hidden rounded-[14px] bg-gray-100 shadow-[0_2px_10px_rgba(15,23,42,0.08)] ring-1 ring-black/[0.04]">
+                  <img src={location.image} alt={location.name} className="h-full w-full object-cover" />
+                </div>
+                <div className="pt-2">
+                  <p className="text-[9px] font-bold uppercase text-brand-purple">Location</p>
+                  <h3 className="mt-1 text-sm font-extrabold text-gray-950">{location.name}</h3>
+                  <p className="mt-1 flex items-center gap-1 text-xs text-gray-500">
+                    <MapPin className="h-3 w-3" strokeWidth={1.8} />
+                    {location.venues} venues
+                  </p>
+                </div>
+              </Link>
+            ))}
+          </div>
+        </section>
+
+        <section className="mt-12 rounded-[18px] bg-gray-50 p-5 ring-1 ring-black/[0.04] md:p-7">
+          <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+            <div>
+              <p className="text-xs font-extrabold uppercase tracking-[0.24em] text-brand-purple">List With STT</p>
+              <h2 className="mt-2 text-2xl font-extrabold text-gray-950">Have a venue to list?</h2>
+              <p className="mt-2 max-w-2xl text-sm font-medium text-gray-500">Keep the homepage separate while giving venues their own focused search and tag experience.</p>
             </div>
-          )}
-
-          {(loading || venueTypesLoading) && <Card><CardContent className="py-16 text-center text-gray-600">Loading live venue catalog...</CardContent></Card>}
-          {error && !loading && !venueTypesLoading && <Card><CardContent className="py-16 text-center"><h3 className="text-2xl font-bold text-gray-900 mb-2">Couldn't load venues</h3><p className="text-gray-600 mb-6">{error.message}</p><Button onClick={retry}>Try again</Button></CardContent></Card>}
-          {!loading && !venueTypesLoading && !error && venues.length > 0 && <motion.div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8" initial={{ opacity: 0 }} whileInView={{ opacity: 1 }} transition={{ duration: 0.6, delay: 0.4 }} viewport={{ once: true }}>{venues.map((venue, index) => <motion.div key={venue.id} initial={{ opacity: 0, y: 50 }} whileInView={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: index * 0.1, ease: 'easeOut' }} viewport={{ once: true }} whileHover={{ y: -8, transition: { duration: 0.3, ease: 'easeOut' } }}><VenueCard venue={venue} /></motion.div>)}</motion.div>}
-
-          {!loading && !venueTypesLoading && !error && venues.length === 0 && (
-            <motion.div initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 0.5, ease: 'easeOut' }}>
-              <Card className="text-center py-16"><CardContent><motion.div className="text-6xl mb-4" animate={{ rotate: [0, -10, 10, -10, 0], scale: [1, 1.1, 1] }} transition={{ duration: 2, repeat: Infinity, repeatDelay: 3 }}>🏢</motion.div><motion.h3 className="text-2xl font-bold text-gray-900 mb-2" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>No venues found</motion.h3><motion.p className="text-gray-600 mb-6" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}>Try adjusting your search criteria or browse all venues</motion.p><motion.div className="flex gap-4 justify-center" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }}><motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}><Button onClick={() => { setSearchTerm(''); setSelectedVenueTypeIds([]) }}>Clear Filters</Button></motion.div><motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}><Button variant="outline" asChild><Link to="/explore">Browse All Venues</Link></Button></motion.div></motion.div></CardContent></Card>
-            </motion.div>
-          )}
-        </div>
-      </section>
-
-      <section className="py-20 px-4 sm:px-6 lg:px-8">
-        <div className="max-w-7xl mx-auto">
-          <motion.div className="text-center mb-16" initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }} viewport={{ once: true }}><motion.h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-6" initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: 0.1 }} viewport={{ once: true }}>Popular Locations</motion.h2><motion.p className="text-xl text-gray-600" initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: 0.2 }} viewport={{ once: true }}>Explore venues in Dubai's most sought-after areas</motion.p></motion.div>
-          <motion.div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8" initial={{ opacity: 0 }} whileInView={{ opacity: 1 }} transition={{ duration: 0.6, delay: 0.3 }} viewport={{ once: true }}>{topLocations.map((location, index) => <motion.div key={index} initial={{ opacity: 0, y: 50 }} whileInView={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: index * 0.1, ease: 'easeOut' }} viewport={{ once: true }} whileHover={{ y: -8, transition: { duration: 0.3, ease: 'easeOut' } }}><Link to={`/explore?tab=venues&location=${encodeURIComponent(location.name)}`}><Card className="group hover:shadow-xl transition-all duration-300 overflow-hidden border-0 bg-white"><div className="relative h-40"><motion.img src={location.image} alt={location.name} className="w-full h-full object-cover" whileHover={{ scale: 1.1 }} transition={{ duration: 0.6, ease: 'easeOut' }} /><motion.div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" initial={{ opacity: 0.6 }} whileHover={{ opacity: 0.8 }} transition={{ duration: 0.3 }} /><motion.div className="absolute bottom-4 left-4 text-white" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.5 + (index * 0.1), duration: 0.4 }}><motion.h3 className="text-lg font-bold mb-1" whileHover={{ scale: 1.05 }} transition={{ type: 'spring', stiffness: 400, damping: 10 }}>{location.name}</motion.h3><motion.p className="text-sm text-white/80" whileHover={{ x: 5 }} transition={{ type: 'spring', stiffness: 400, damping: 10 }}>{location.venues} venues</motion.p></motion.div></div></Card></Link></motion.div>)}</motion.div>
-        </div>
-      </section>
-
-      <section className="py-20 px-4 sm:px-6 lg:px-8 bg-white"><div className="max-w-7xl mx-auto"><motion.div className="text-center mb-16" initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }} viewport={{ once: true }}><motion.h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4" initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: 0.1 }} viewport={{ once: true }}>Why choose our venues</motion.h2><motion.p className="text-xl text-gray-600" initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: 0.2 }} viewport={{ once: true }}>Every venue meets our high standards</motion.p></motion.div><motion.div className="grid grid-cols-1 md:grid-cols-3 gap-12" initial={{ opacity: 0 }} whileInView={{ opacity: 1 }} transition={{ duration: 0.6, delay: 0.3 }} viewport={{ once: true }}>{venueFeatures.map((feature, index) => { const IconComponent = feature.icon; return <motion.div key={index} className="text-center group" initial={{ opacity: 0, y: 50 }} whileInView={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: 0.4 + (index * 0.2), ease: 'easeOut' }} viewport={{ once: true }} whileHover={{ y: -8, transition: { duration: 0.3, ease: 'easeOut' } }}><motion.div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-6 group-hover:bg-gray-200 transition-colors duration-300" whileHover={{ scale: 1.1, rotate: 360 }} transition={{ type: 'spring', stiffness: 260, damping: 20, rotate: { duration: 0.6 } }}><IconComponent className="w-8 h-8 text-gray-700" /></motion.div><motion.h3 className="text-xl font-semibold text-gray-900 mb-4" initial={{ opacity: 0 }} whileInView={{ opacity: 1 }} transition={{ delay: 0.6 + (index * 0.2), duration: 0.4 }} viewport={{ once: true }}>{feature.title}</motion.h3><motion.p className="text-gray-600 leading-relaxed" initial={{ opacity: 0 }} whileInView={{ opacity: 1 }} transition={{ delay: 0.7 + (index * 0.2), duration: 0.4 }} viewport={{ once: true }}>{feature.description}</motion.p></motion.div> })}</motion.div></div></section>
-
-      <section className="py-20 px-4 sm:px-6 lg:px-8 bg-gray-50"><div className="max-w-4xl mx-auto text-center"><motion.h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-6" initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }} viewport={{ once: true }}>Ready to book your perfect venue?</motion.h2><motion.p className="text-xl text-gray-600 mb-8 max-w-2xl mx-auto" initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: 0.2 }} viewport={{ once: true }}>Let our venue experts help you find the ideal space for your next event</motion.p><motion.div className="flex flex-col sm:flex-row gap-4 justify-center" initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: 0.4 }} viewport={{ once: true }}><motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}><Button size="lg" className="bg-gray-900 hover:bg-gray-800 text-white"><motion.div whileHover={{ rotate: 360 }} transition={{ duration: 0.5 }}><Building className="w-5 h-5 mr-2" /></motion.div>Browse All Venues</Button></motion.div><motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}><Button size="lg" variant="outline" className="border-gray-300 text-gray-700 hover:bg-gray-100"><motion.div animate={{ scale: [1, 1.1, 1], rotate: [0, 5, -5, 0] }} transition={{ duration: 2, repeat: Infinity, repeatDelay: 3 }}><HeadphonesIcon className="w-5 h-5 mr-2" /></motion.div>Contact Expert</Button></motion.div></motion.div></div></section>
+            <Link to="/venues" className="inline-flex w-fit items-center gap-2 rounded-full bg-brand-purple px-4 py-2 text-xs font-extrabold text-white">
+              <Building className="h-4 w-4" strokeWidth={1.8} />
+              List a Venue
+            </Link>
+          </div>
+        </section>
+      </main>
     </div>
   )
 }

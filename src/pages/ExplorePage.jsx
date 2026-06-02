@@ -1,28 +1,51 @@
-import { useEffect, useState } from 'react'
-import { Filter, MapPin, Calendar, Grid, List, Building2, SlidersHorizontal, Sparkles } from 'lucide-react'
-import { Button } from '../shared/ui/button'
-import { Card, CardContent } from '../shared/ui/card'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '../shared/ui/tabs'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../shared/ui/select'
-import EventCard from '../features/events/components/EventCard'
-import DiscoverySearchHero from '../features/explore/components/DiscoverySearchHero'
-import VenueCard from '../features/venues/components/VenueCard'
-import { useSearchParams } from 'react-router-dom'
+import { useEffect, useMemo, useState } from 'react'
+import { useLocation, useSearchParams } from 'react-router-dom'
+import { CalendarDays, Filter, MapPin, SlidersHorizontal, Sparkles } from 'lucide-react'
 import { useExploreCatalog } from '../features/catalog'
+import { SttEventTile, SttPageHeader, SttRail, SttRailItem, SttVenueTile } from '../components/SttDiscovery'
 
-const defaultFilters = { location: '', servicePeriod: 'all', environmentType: 'all', rating: 'all', familyFriendly: 'all', animalFriendly: 'all' }
+const defaultFilters = {
+  location: '',
+  servicePeriod: 'all',
+  environmentType: 'all',
+  rating: 'all',
+  familyFriendly: 'all',
+  animalFriendly: 'all',
+}
 
-function ExploreFilters({ filters, updateFilter, clearFilters, activeResultsLength }) {
-  const fieldClassName = 'rounded-2xl border-gray-200'
-  const renderSelect = (label, value, options, key) => <div className="space-y-3"><label className="block text-sm font-semibold text-gray-700">{label}</label><Select value={value} onValueChange={(nextValue) => updateFilter(key, nextValue)}><SelectTrigger className={fieldClassName}><SelectValue /></SelectTrigger><SelectContent>{options.map((option) => <SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>)}</SelectContent></Select></div>
-  return <Card className="mb-8 border-0 shadow-lg rounded-3xl overflow-hidden"><CardContent className="p-8"><div className="flex items-center justify-between mb-6"><h3 className="text-xl font-bold text-gray-900 flex items-center"><SlidersHorizontal className="w-5 h-5 mr-3" />Refine Your Search</h3><Button variant="ghost" onClick={clearFilters} className="rounded-2xl">Clear All</Button></div><div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6">{renderSelect('Service', filters.servicePeriod, [{ value: 'all', label: 'All' }, { value: 'day', label: 'Day' }, { value: 'night', label: 'Night' }], 'servicePeriod')}{renderSelect('Environment', filters.environmentType, [{ value: 'all', label: 'All' }, { value: 'indoor', label: 'Indoor' }, { value: 'outdoor', label: 'Outdoor' }], 'environmentType')}{renderSelect('Rating', filters.rating, [{ value: 'all', label: 'All' }, { value: '4', label: '4+ Stars' }, { value: '4.5', label: '4.5+ Stars' }], 'rating')}{renderSelect('Family Friendly', filters.familyFriendly, [{ value: 'all', label: 'All' }, { value: 'yes', label: 'Yes' }, { value: 'no', label: 'No' }], 'familyFriendly')}{renderSelect('Animal Friendly', filters.animalFriendly, [{ value: 'all', label: 'All' }, { value: 'yes', label: 'Yes' }, { value: 'no', label: 'No' }], 'animalFriendly')}</div><div className="flex justify-between items-center mt-8 pt-6 border-t border-gray-200"><p className="text-gray-600 flex items-center"><Sparkles className="w-4 h-4 mr-2 text-purple-600" /><span className="font-semibold text-purple-600">{activeResultsLength}</span><span className="ml-1">results found</span></p><Button variant="outline" onClick={clearFilters} className="rounded-2xl">Reset</Button></div></CardContent></Card>
+const filterGroups = [
+  { key: 'servicePeriod', label: 'Service', options: ['all', 'day', 'night'] },
+  { key: 'environmentType', label: 'Setting', options: ['all', 'indoor', 'outdoor'] },
+  { key: 'rating', label: 'Rating', options: ['all', '4', '4.5'] },
+]
+
+const formatOption = (value) => {
+  if (value === 'all') return 'All'
+  if (value === '4') return '4+'
+  if (value === '4.5') return '4.5+'
+  return value.charAt(0).toUpperCase() + value.slice(1)
+}
+
+const eventMatchesTerms = (event, terms) => {
+  const text = [
+    event.title,
+    event.category,
+    event.type,
+    event.location,
+    event.venue,
+    event.dayPeriod,
+    ...(event.tags || []),
+  ].join(' ').toLowerCase()
+
+  return terms.some((term) => text.includes(term))
 }
 
 export default function ExplorePage() {
+  const location = useLocation()
+  const isExperiencesPage = location.pathname === '/experiences'
   const [searchParams, setSearchParams] = useSearchParams()
   const [searchTerm, setSearchTerm] = useState(searchParams.get('q') || '')
-  const [activeTab, setActiveTab] = useState(searchParams.get('tab') || 'all')
-  const [viewMode, setViewMode] = useState('grid')
+  const [activeTab, setActiveTab] = useState(isExperiencesPage ? 'events' : searchParams.get('tab') || 'all')
   const [showFilters, setShowFilters] = useState(false)
   const [showMap, setShowMap] = useState(false)
   const [filters, setFilters] = useState({ ...defaultFilters, location: searchParams.get('location') || '' })
@@ -30,17 +53,25 @@ export default function ExplorePage() {
 
   useEffect(() => {
     setSearchTerm(searchParams.get('q') || '')
-    setActiveTab(searchParams.get('tab') || 'all')
+    setActiveTab(isExperiencesPage ? 'events' : searchParams.get('tab') || 'all')
     setFilters((current) => ({ ...current, location: searchParams.get('location') || '' }))
-  }, [searchParams])
+  }, [isExperiencesPage, searchParams])
 
   const syncParams = (nextFilters = filters, nextTab = activeTab, nextSearchTerm = searchTerm) => {
     const params = new URLSearchParams()
     if (nextSearchTerm) params.set('q', nextSearchTerm)
-    if (nextTab) params.set('tab', nextTab)
+    if (!isExperiencesPage && nextTab) params.set('tab', nextTab)
     if (nextFilters.location) params.set('location', nextFilters.location)
     setSearchParams(params)
     setFilters(nextFilters)
+    setActiveTab(isExperiencesPage ? 'events' : nextTab)
+  }
+
+  const handleApplySearch = ({ keyword = '', location: selectedLocation = '', category = '' } = {}) => {
+    const nextTerm = (keyword || category || selectedLocation || '').trim()
+    const nextFilters = { ...filters, location: selectedLocation || filters.location }
+    setSearchTerm(nextTerm)
+    syncParams(nextFilters, 'events', nextTerm)
   }
 
   const updateFilter = (key, value) => {
@@ -49,16 +80,163 @@ export default function ExplorePage() {
   }
 
   const clearFilters = () => syncParams(defaultFilters, activeTab, searchTerm)
-  const activeResults = activeTab === 'events' ? results.events : activeTab === 'venues' ? results.venues : [...results.events, ...results.venues]
-  const renderItem = (item) => item.title ? <EventCard key={`event-${item.id}`} event={item} viewMode={viewMode} /> : <VenueCard key={`venue-${item.id}`} venue={item} viewMode={viewMode} />
 
-  return <div className="min-h-screen bg-white"><DiscoverySearchHero backgroundImage="https://images.unsplash.com/photo-1559329007-40df8a9345d8?w=1920&h=1080&fit=crop" backgroundAlt="Dubai Experience" title="Explore Dubai" description="Discover events and venues" searchPlaceholder="Search experiences..." searchTerm={searchTerm} onSearchTermChange={setSearchTerm} onSearch={() => syncParams(filters, activeTab, searchTerm)} onSearchKeyDown={(event) => { if (event.key === 'Enter') { event.preventDefault(); syncParams(filters, activeTab, searchTerm) } }} searchButtonClassName="rounded-full px-4 sm:px-8 h-10 sm:h-12 text-sm sm:text-base font-semibold bg-emerald-600 text-white shadow-lg shrink-0 ml-2 hover:bg-emerald-700 transition-colors" />
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-20 py-8 sm:py-12"><Card className="mb-8 border-0 shadow-lg rounded-3xl overflow-hidden"><CardContent className="p-4 sm:p-8"><div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6"><Tabs value={activeTab} onValueChange={(value) => { setActiveTab(value); syncParams(filters, value, searchTerm) }} className="w-full lg:w-auto overflow-hidden"><TabsList className="flex w-full overflow-x-auto no-scrollbar lg:w-auto bg-gray-100 rounded-2xl p-1 gap-1"><TabsTrigger value="all" className="flex-1 lg:flex-none rounded-xl"><Sparkles className="w-4 h-4 mr-2" />All ({results.total})</TabsTrigger><TabsTrigger value="events" className="flex-1 lg:flex-none rounded-xl"><Calendar className="w-4 h-4 mr-2" />Events ({results.events.length})</TabsTrigger><TabsTrigger value="venues" className="flex-1 lg:flex-none rounded-xl"><Building2 className="w-4 h-4 mr-2" />Venues ({results.venues.length})</TabsTrigger></TabsList></Tabs><div className="flex items-center justify-between w-full lg:w-auto gap-4"><Button variant={showFilters ? 'default' : 'outline'} onClick={() => setShowFilters((value) => !value)} className="flex-1 lg:flex-none rounded-2xl px-6"><Filter className="w-4 h-4 mr-2" />Filters</Button><Button variant={showMap ? 'default' : 'outline'} onClick={() => setShowMap((value) => !value)} className="flex-1 lg:flex-none rounded-2xl px-6"><MapPin className="w-4 h-4 mr-2" />Map View</Button><div className="flex bg-gray-100 rounded-2xl p-1 shrink-0"><Button variant={viewMode === 'grid' ? 'default' : 'ghost'} size="sm" onClick={() => setViewMode('grid')} className="rounded-xl"><Grid className="w-4 h-4" /></Button><Button variant={viewMode === 'list' ? 'default' : 'ghost'} size="sm" onClick={() => setViewMode('list')} className="rounded-xl"><List className="w-4 h-4" /></Button></div></div></div></CardContent></Card>
-      {filters.location && <div className="mb-6 flex items-center justify-between rounded-3xl border border-emerald-100 bg-emerald-50 px-5 py-4 text-sm text-emerald-900"><div className="flex items-center gap-2"><MapPin className="h-4 w-4" /><span>Filtered by location: <span className="font-semibold">{filters.location}</span></span></div><Button variant="ghost" className="rounded-2xl" onClick={() => updateFilter('location', '')}>Clear location</Button></div>}
-      {showFilters && <ExploreFilters filters={filters} updateFilter={updateFilter} clearFilters={clearFilters} activeResultsLength={activeResults.length} />}
-      {showMap && <Card className="mb-8 border-0 shadow-lg rounded-3xl overflow-hidden"><CardContent className="p-0"><div className="relative"><img src="https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?w=1600&h=500&fit=crop" alt="Map preview" className="w-full h-64 object-cover" /><div className="absolute inset-0 bg-black/20 flex items-center justify-center"><div className="bg-white/90 backdrop-blur-md px-4 py-2 rounded-full text-sm font-semibold text-gray-700">Interactive map preview (demo)</div></div></div></CardContent></Card>}
-      {loading && <Card><CardContent className="py-16 text-center text-gray-600">Loading live catalog...</CardContent></Card>}
-      {error && !loading && <Card><CardContent className="py-16 text-center"><p className="text-gray-600 mb-4">{error.message}</p><Button onClick={retry}>Try again</Button></CardContent></Card>}
-      {!loading && !error && <Tabs value={activeTab} className="w-full">{['all', 'events', 'venues'].map((tab) => <TabsContent key={tab} value={tab} className="mt-0">{activeResults.length === 0 ? <Card className="text-center py-16"><CardContent><div className="text-6xl mb-4">🔍</div><h3 className="text-2xl font-bold text-gray-900 mb-2">No results found</h3><p className="text-gray-600 mb-6">Try adjusting your search or filters</p><Button onClick={clearFilters}>Clear Filters</Button></CardContent></Card> : <div className={`grid gap-6 ${viewMode === 'list' ? 'grid-cols-1' : 'grid-cols-1 md:grid-cols-2 lg:grid-cols-4'}`}>{activeResults.map(renderItem)}</div>}</TabsContent>)}</Tabs>}
-    </div></div>
+  const activeResults = useMemo(() => {
+    if (isExperiencesPage || activeTab === 'events') return results.events
+    if (activeTab === 'venues') return results.venues
+    return [...results.events, ...results.venues]
+  }, [activeTab, isExperiencesPage, results.events, results.venues])
+
+  const brunchExperiences = useMemo(() => results.events.filter((event) => eventMatchesTerms(event, ['brunch', 'day', 'lunch'])), [results.events])
+  const nightExperiences = useMemo(() => results.events.filter((event) => eventMatchesTerms(event, ['night', 'evening', 'party', 'dj'])), [results.events])
+
+  const renderEventRail = (items, badge = 'Featured') => items.map((event) => (
+    <SttRailItem key={`event-${event.id}`}>
+      <SttEventTile event={event} badge={badge} />
+    </SttRailItem>
+  ))
+
+  const renderVenueRail = (items, badge = 'Featured') => items.map((venue) => (
+    <SttRailItem key={`venue-${venue.id}`} variant="venue">
+      <SttVenueTile venue={venue} badge={badge} />
+    </SttRailItem>
+  ))
+
+  return (
+    <div className="min-h-screen bg-white pb-20 text-gray-950 md:pb-0">
+      <SttPageHeader mode="experiences" searchTerm={searchTerm} onApplySearch={handleApplySearch} />
+
+      <main className="mx-auto mt-8 w-full max-w-6xl px-5 md:mt-11 md:px-8">
+        <div className="mb-6 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+          <div>
+            <p className="text-xs font-extrabold uppercase tracking-[0.28em] text-brand-purple">{isExperiencesPage ? 'Experiences' : 'Search'}</p>
+            <h1 className="mt-2 text-3xl font-extrabold tracking-tight text-gray-950 md:text-4xl">
+              {isExperiencesPage ? 'Featured Experiences' : 'Explore Dubai'}
+            </h1>
+            <p className="mt-2 max-w-2xl text-sm font-medium text-gray-500">
+              Hosted things to do, social tables, and curated escapes around the city.
+            </p>
+          </div>
+          <div className="flex gap-2">
+            <button type="button" onClick={() => setShowFilters((value) => !value)} className="inline-flex items-center gap-2 rounded-full border border-gray-200 bg-white px-4 py-2 text-xs font-extrabold text-gray-700 shadow-sm">
+              <SlidersHorizontal className="h-4 w-4" strokeWidth={1.8} />
+              Filters
+            </button>
+            <button type="button" onClick={() => setShowMap((value) => !value)} className="inline-flex items-center gap-2 rounded-full border border-gray-200 bg-white px-4 py-2 text-xs font-extrabold text-gray-700 shadow-sm">
+              <MapPin className="h-4 w-4" strokeWidth={1.8} />
+              Map
+            </button>
+          </div>
+        </div>
+
+        {!isExperiencesPage && (
+          <div className="no-scrollbar mb-6 flex gap-2 overflow-x-auto pb-2">
+            {[
+              { id: 'all', label: `All (${results.total})`, icon: Sparkles },
+              { id: 'events', label: `Events (${results.events.length})`, icon: CalendarDays },
+              { id: 'venues', label: `Venues (${results.venues.length})`, icon: MapPin },
+            ].map((item) => {
+              const Icon = item.icon
+              const isActive = activeTab === item.id
+
+              return (
+                <button key={item.id} type="button" onClick={() => syncParams(filters, item.id, searchTerm)} className={`inline-flex shrink-0 items-center gap-2 rounded-full px-3 py-2 text-xs font-extrabold shadow-sm ring-1 ${isActive ? 'bg-brand-purple text-white ring-brand-purple' : 'bg-white text-gray-700 ring-gray-200'}`}>
+                  <Icon className="h-4 w-4" strokeWidth={1.8} />
+                  {item.label}
+                </button>
+              )
+            })}
+          </div>
+        )}
+
+        {showFilters && (
+          <div className="mb-6 rounded-[18px] bg-white p-4 shadow-[0_2px_14px_rgba(15,23,42,0.10)] ring-1 ring-black/[0.05] md:p-5">
+            <div className="mb-4 flex items-center justify-between">
+              <h2 className="inline-flex items-center gap-2 text-sm font-extrabold text-gray-950">
+                <Filter className="h-4 w-4" strokeWidth={1.8} />
+                Refine Search
+              </h2>
+              <button type="button" onClick={clearFilters} className="text-xs font-extrabold text-brand-purple">Clear all</button>
+            </div>
+            <div className="grid gap-4 md:grid-cols-3">
+              {filterGroups.map((group) => (
+                <div key={group.key}>
+                  <p className="mb-2 text-[11px] font-extrabold uppercase tracking-[0.18em] text-gray-400">{group.label}</p>
+                  <div className="flex flex-wrap gap-2">
+                    {group.options.map((option) => {
+                      const isSelected = filters[group.key] === option
+
+                      return (
+                        <button key={option} type="button" onClick={() => updateFilter(group.key, option)} className={`rounded-full px-3 py-2 text-xs font-extrabold ring-1 ${isSelected ? 'bg-brand-purple text-white ring-brand-purple' : 'bg-white text-gray-700 ring-gray-200'}`}>
+                          {formatOption(option)}
+                        </button>
+                      )
+                    })}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {showMap && (
+          <div className="mb-6 overflow-hidden rounded-[18px] bg-gray-100 shadow-[0_2px_14px_rgba(15,23,42,0.10)] ring-1 ring-black/[0.05]">
+            <div className="flex h-56 items-center justify-center bg-[url('https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?w=1400&h=600&fit=crop')] bg-cover bg-center">
+              <div className="rounded-full bg-white/90 px-4 py-2 text-xs font-extrabold text-gray-700 shadow-sm backdrop-blur-md">
+                Demo map view: select Events, Experiences, or Venues from the page links above
+              </div>
+            </div>
+          </div>
+        )}
+
+        {loading && <div className="rounded-[18px] bg-gray-50 p-10 text-center text-sm font-semibold text-gray-500 ring-1 ring-black/5">Loading demo catalog...</div>}
+        {error && !loading && (
+          <div className="rounded-[18px] bg-gray-50 p-10 text-center ring-1 ring-black/5">
+            <p className="text-sm text-gray-500">{error.message}</p>
+            <button type="button" onClick={retry} className="mt-5 rounded-full bg-brand-purple px-4 py-2 text-xs font-extrabold text-white">Try again</button>
+          </div>
+        )}
+        {!loading && !error && activeResults.length > 0 && (
+          <div className="space-y-10">
+            {isExperiencesPage && (
+              <>
+                <SttRail title={searchTerm ? 'Search Results' : 'Experiences in Dubai'} actionTo="/experiences">
+                  {renderEventRail(results.events, searchTerm ? 'Match' : 'Featured')}
+                </SttRail>
+                {!searchTerm && brunchExperiences.length > 0 && (
+                  <SttRail title="Food and Brunch Experiences" actionTo="/experiences">
+                    {renderEventRail(brunchExperiences, 'Brunch')}
+                  </SttRail>
+                )}
+                {!searchTerm && nightExperiences.length > 0 && (
+                  <SttRail title="Evening Experiences" actionTo="/experiences">
+                    {renderEventRail(nightExperiences, 'Night')}
+                  </SttRail>
+                )}
+              </>
+            )}
+
+            {!isExperiencesPage && activeTab !== 'venues' && results.events.length > 0 && (
+              <SttRail title={searchTerm ? 'Event Matches' : 'Events in Dubai'} actionTo="/events">
+                {renderEventRail(results.events, searchTerm ? 'Match' : 'Featured')}
+              </SttRail>
+            )}
+
+            {!isExperiencesPage && activeTab !== 'events' && results.venues.length > 0 && (
+              <SttRail title={searchTerm ? 'Venue Matches' : 'Venues in Dubai'} actionTo="/venues">
+                {renderVenueRail(results.venues, searchTerm ? 'Match' : 'Featured')}
+              </SttRail>
+            )}
+          </div>
+        )}
+        {!loading && !error && activeResults.length === 0 && (
+          <div className="rounded-[18px] bg-gray-50 p-10 text-center ring-1 ring-black/5">
+            <h2 className="text-xl font-extrabold text-gray-950">No results found</h2>
+            <p className="mt-2 text-sm text-gray-500">Try adjusting your search or filters.</p>
+            <button type="button" onClick={clearFilters} className="mt-5 rounded-full bg-brand-purple px-4 py-2 text-xs font-extrabold text-white">Clear Filters</button>
+          </div>
+        )}
+      </main>
+    </div>
+  )
 }

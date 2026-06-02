@@ -239,7 +239,7 @@ const CartPage = () => {
             <ShoppingBag className="w-8 h-8 text-gray-500" />
           </div>
           <h1 className="text-3xl font-bold text-gray-900 mb-2">Sign in to view your cart</h1>
-          <p className="text-gray-500 mb-8">Your cart is tied to your customer account so it follows you across refreshes and devices.</p>
+          <p className="text-gray-500 mb-8">Your cart is stored locally for this UI demo.</p>
           <Link to="/auth?redirect=%2Fcart">
             <Button className="rounded-full px-8">Sign In</Button>
           </Link>

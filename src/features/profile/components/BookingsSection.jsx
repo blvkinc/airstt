@@ -17,7 +17,7 @@ export function BookingsSection({ bookings }) {
 
       {bookings.length === 0 && (
         <Card className="border-0 shadow-sm">
-          <CardContent className="p-6 text-gray-600">You do not have any backend bookings yet.</CardContent>
+          <CardContent className="p-6 text-gray-600">You do not have any demo bookings yet.</CardContent>
         </Card>
       )}
 

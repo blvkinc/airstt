@@ -24,7 +24,7 @@
   --input: 214.3 31.8% 91.4%;
   --ring: 18 61% 66%;
   --radius: 0.75rem;
-  --brand-purple: #7c3aed;
+  --brand-purple: #AB83BB;
   --brand-blue: #2563eb;
   --brand-red: #ef4444;
   --brand-orange: #f97316;
@@ -32,9 +32,11 @@
 }
 
 html { scroll-behavior: smooth; }
+html, body, #root { width: 100%; max-width: 100%; overflow-x: hidden; }
 body { @apply bg-background text-foreground font-sans antialiased; }
 
 @layer base {
+  *, *::before, *::after { box-sizing: border-box; }
   * { @apply border-border; }
 }
 
@@ -47,6 +49,11 @@ body { @apply bg-background text-foreground font-sans antialiased; }
   .no-scrollbar::-webkit-scrollbar { display: none; }
   .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
   .mask-gradient-x { mask-image: linear-gradient(to right, transparent, black 10%, black 90%, transparent); }
+  .mobile-rail-fade { -webkit-mask-image: linear-gradient(to right, black 0, black calc(100% - 88px), rgba(0, 0, 0, 0.62) calc(100% - 36px), transparent 100%); mask-image: linear-gradient(to right, black 0, black calc(100% - 88px), rgba(0, 0, 0, 0.62) calc(100% - 36px), transparent 100%); }
+
+  @media (min-width: 768px) {
+    .mobile-rail-fade { -webkit-mask-image: none; mask-image: none; }
+  }
 }
 
 @keyframes bounce-slow {

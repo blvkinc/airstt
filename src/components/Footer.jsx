@@ -1,169 +1,107 @@
-import React, { useState } from 'react'
+import { useState } from 'react'
 import { Link } from 'react-router-dom'
-import { Instagram, Facebook, Twitter, Mail, MapPin, Send } from 'lucide-react'
-import { Input } from '../shared/ui/input'
+import { Facebook, Instagram, Mail, MapPin, Send, Twitter } from 'lucide-react'
+import sttLogo from '../shared/assets/sttmainlogo.svg'
+
+const brandLogoFilter = {
+  filter: 'brightness(0) saturate(100%) invert(59%) sepia(19%) saturate(761%) hue-rotate(238deg) brightness(88%) contrast(87%)',
+}
 
 const Footer = () => {
   const [email, setEmail] = useState('')
 
-  const handleSubscribe = (e) => {
-    e.preventDefault()
-    // Mock subscription
-    console.log('Subscribed:', email)
+  const handleSubscribe = (event) => {
+    event.preventDefault()
     setEmail('')
   }
 
   return (
-    <footer className="relative bg-[#0a0a0a] text-white pt-20 pb-10 overflow-hidden">
-      {/* Decorative Brand Gradient Line at Top */}
-      <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-brand-purple via-brand-blue to-brand-orange" />
-
-      {/* Background Ambient Glow */}
-      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[600px] bg-brand-purple/5 blur-[120px] rounded-full pointer-events-none" />
-
-      <div className="max-w-7xl mx-auto px-6 relative z-10">
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 mb-16">
-
-          {/* Brand & Newsletter Section (Cols 1-5) */}
-          <div className="lg:col-span-5 space-y-8">
-            <Link to="/" className="inline-block group">
-              <div className="flex items-center space-x-3 mb-2">
-                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-brand-purple to-brand-blue flex items-center justify-center shadow-lg group-hover:shadow-brand-purple/20 transition-all duration-500">
-                  <span className="text-white font-bold text-lg font-serif">S</span>
-                </div>
-                <span className="font-bold text-2xl tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-white to-white/70 group-hover:to-white transition-all duration-300">
-                  Set The Table
-                </span>
-              </div>
-            </Link>
-
-            <p className="text-gray-400 leading-relaxed max-w-md text-base">
-              Dubai's premier marketplace for curated brunch and party experiences.
-              Elevating your social calendar with exclusive venues and unforgettable moments.
-            </p>
-
-            {/* Newsletter */}
-            <div className="pt-4">
-              <h4 className="text-sm font-semibold text-white mb-4 uppercase tracking-wider">Stay Updated</h4>
-              <form onSubmit={handleSubscribe} className="relative max-w-sm">
-                <Input
-                  type="email"
-                  placeholder="Enter your email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  className="bg-white/5 border-white/10 text-white placeholder:text-gray-500 rounded-2xl pr-12 h-12 focus:border-brand-purple/50 focus:ring-brand-purple/20 transition-all duration-300"
-                />
-                <button
-                  type="submit"
-                  className="absolute right-1 top-1 w-10 h-10 flex items-center justify-center bg-white/10 hover:bg-white/20 rounded-xl text-white transition-all duration-300 group"
-                >
-                  <Send strokeWidth={1.5} className="w-4 h-4 group-hover:-translate-y-0.5 group-hover:translate-x-0.5 transition-transform" />
-                </button>
-              </form>
-            </div>
-          </div>
-
-          {/* Navigation Links (Cols 6-12) */}
-          <div className="lg:col-span-7 grid grid-cols-1 sm:grid-cols-3 gap-8 pt-2">
-
-            {/* Discover */}
-            <div className="space-y-6">
-              <h4 className="text-base font-semibold text-white tracking-wide">Discover</h4>
-              <ul className="space-y-4">
-                {['Browse Events', 'Featured Venues', 'Trending Now', 'New Arrivals'].map((item) => (
-                  <li key={item}>
-                    <Link to="/explore" className="text-gray-400 hover:text-brand-blue hover:pl-1 transition-all duration-300 text-sm flex items-center gap-2 group">
-                      <span className="w-1 h-1 rounded-full bg-brand-blue opacity-0 group-hover:opacity-100 transition-opacity" />
-                      {item}
-                    </Link>
-                  </li>
-                ))}
-              </ul>
-            </div>
-
-            {/* Account */}
-            <div className="space-y-6">
-              <h4 className="text-base font-semibold text-white tracking-wide">Account</h4>
-              <ul className="space-y-4">
-                {[
-                  { label: 'My Profile', href: '/profile' },
-                  { label: 'My Bookings', href: '/profile?tab=bookings' },
-                  { label: 'Favorites', href: '/profile?tab=favorites' },
-                  { label: 'Rewards', href: '/profile?tab=rewards' }
-                ].map((item) => (
-                  <li key={item.label}>
-                    <Link to={item.href} className="text-gray-400 hover:text-brand-purple hover:pl-1 transition-all duration-300 text-sm flex items-center gap-2 group">
-                      <span className="w-1 h-1 rounded-full bg-brand-purple opacity-0 group-hover:opacity-100 transition-opacity" />
-                      {item.label}
-                    </Link>
-                  </li>
-                ))}
-              </ul>
-            </div>
-
-            {/* Contact Info */}
-            <div className="space-y-6">
-              <h4 className="text-base font-semibold text-white tracking-wide">Contact</h4>
-              <ul className="space-y-5">
-                <li className="flex items-start space-x-3 group cursor-pointer hover:bg-white/5 p-2 -ml-2 rounded-xl transition-all">
-                  <div className="p-2 bg-white/5 rounded-lg text-brand-orange group-hover:bg-brand-orange group-hover:text-white transition-colors duration-300">
-                    <MapPin strokeWidth={1.5} className="w-4 h-4" />
-                  </div>
-                  <span className="text-gray-400 text-sm group-hover:text-white transition-colors mt-1.5">
-                    Business Bay <br /> Dubai, UAE
-                  </span>
-                </li>
-                <li className="flex items-center space-x-3 group cursor-pointer hover:bg-white/5 p-2 -ml-2 rounded-xl transition-all">
-                  <div className="p-2 bg-white/5 rounded-lg text-brand-blue group-hover:bg-brand-blue group-hover:text-white transition-colors duration-300">
-                    <Mail strokeWidth={1.5} className="w-4 h-4" />
-                  </div>
-                  <span className="text-gray-400 text-sm group-hover:text-white transition-colors">
-                    hello@setthetable.ae
-                  </span>
-                </li>
-              </ul>
-            </div>
-
-          </div>
-        </div>
-
-        {/* Separator */}
-        <div className="w-full h-px bg-gradient-to-r from-transparent via-white/10 to-transparent mb-8" />
-
-        {/* Bottom Bar */}
-        <div className="flex flex-col md:flex-row justify-between items-center gap-6">
-          <p className="text-gray-500 text-sm">
-            © {new Date().getFullYear()} Set The Table. All rights reserved.
+    <footer id="footer" className="mt-16 bg-[#080808] text-white md:mt-24">
+      <div className="mx-auto grid max-w-6xl grid-cols-1 gap-12 px-8 py-16 md:grid-cols-[1.4fr_0.7fr_0.7fr_0.9fr] md:gap-16 md:py-20">
+        <div>
+          <Link to="/" className="inline-flex">
+            <img src={sttLogo} alt="Set The Table" className="h-20 w-auto" style={brandLogoFilter} />
+          </Link>
+          <p className="mt-7 max-w-[410px] text-[17px] leading-8 text-white/40">
+            Dubai's premier marketplace for curated brunch and party experiences. Elevating your social calendar with exclusive venues and unforgettable moments.
           </p>
 
-          {/* Social Icons */}
-          <div className="flex items-center space-x-4">
-            {[
-              { icon: Instagram, href: 'https://instagram.com', color: 'hover:text-pink-500', bg: 'hover:bg-pink-500/10' },
-              { icon: Twitter, href: 'https://x.com', color: 'hover:text-sky-400', bg: 'hover:bg-sky-400/10' },
-              { icon: Facebook, href: 'https://facebook.com', color: 'hover:text-blue-500', bg: 'hover:bg-blue-500/10' }
-            ].map((social, index) => (
-              <a
-                key={index}
-                href={social.href}
-                target="_blank"
-                rel="noreferrer"
-                className={`p-2.5 bg-white/5 text-gray-400 rounded-xl transition-all duration-300 hover:scale-110 ${social.color} ${social.bg}`}
-              >
-                <social.icon strokeWidth={1.5} className="w-4 h-4" />
-              </a>
-            ))}
-          </div>
+          <form onSubmit={handleSubscribe} className="mt-12 max-w-[380px]">
+            <label htmlFor="footer-email" className="block text-base font-extrabold text-white">Stay Updated</label>
+            <div className="mt-4 flex h-11 items-center rounded-full border border-brand-purple/70 bg-transparent pl-5 pr-1 shadow-[0_2px_12px_rgba(0,0,0,0.18)]">
+              <input
+                id="footer-email"
+                type="email"
+                value={email}
+                onChange={(event) => setEmail(event.target.value)}
+                placeholder="Enter your email"
+                className="w-0 min-w-0 flex-1 bg-transparent text-xs text-white outline-none placeholder:text-white/30"
+              />
+              <button type="submit" aria-label="Subscribe" className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white text-brand-purple">
+                <Send className="h-4 w-4" strokeWidth={1.7} />
+              </button>
+            </div>
+          </form>
+        </div>
 
-          {/* Legal Links */}
-          <div className="flex space-x-6">
-            <a href="mailto:hello@setthetable.ae?subject=Privacy%20Policy%20Request" className="text-gray-500 hover:text-white text-sm transition-colors">
-              Privacy Policy
-            </a>
-            <a href="mailto:hello@setthetable.ae?subject=Terms%20of%20Service%20Request" className="text-gray-500 hover:text-white text-sm transition-colors">
-              Terms of Service
-            </a>
+        <div className="md:pt-12">
+          <h3 className="text-base font-extrabold text-white">Discover</h3>
+          <ul className="mt-7 space-y-5 text-sm text-white/30">
+            <li><Link to="/events" className="transition-colors hover:text-brand-purple">Browse Events</Link></li>
+            <li><Link to="/venues" className="transition-colors hover:text-brand-purple">Featured Venues</Link></li>
+            <li><Link to="/experiences" className="transition-colors hover:text-brand-purple">Trending Now</Link></li>
+            <li><Link to="/events" className="transition-colors hover:text-brand-purple">New Arrivals</Link></li>
+          </ul>
+        </div>
+
+        <div className="md:pt-12">
+          <h3 className="text-base font-extrabold text-white">Account</h3>
+          <ul className="mt-7 space-y-5 text-sm text-white/30">
+            <li><Link to="/profile" className="transition-colors hover:text-brand-purple">My Profile</Link></li>
+            <li><Link to="/profile?tab=bookings" className="transition-colors hover:text-brand-purple">My Bookings</Link></li>
+            <li><Link to="/profile?tab=favorites" className="transition-colors hover:text-brand-purple">Favourites</Link></li>
+            <li><Link to="/profile?tab=rewards" className="transition-colors hover:text-brand-purple">Rewards</Link></li>
+          </ul>
+        </div>
+
+        <div className="md:pt-12">
+          <h3 className="text-base font-extrabold text-white">Contact</h3>
+          <ul className="mt-7 space-y-6 text-sm text-white/40">
+            <li className="flex items-center gap-4">
+              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white/10 text-brand-purple">
+                <MapPin className="h-4 w-4" strokeWidth={1.7} />
+              </span>
+              <span>Business Bay<br />Dubai, UAE</span>
+            </li>
+            <li className="flex items-center gap-4">
+              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white/10 text-brand-purple">
+                <Mail className="h-4 w-4" strokeWidth={1.7} />
+              </span>
+              <span>hello@setthetable.ae</span>
+            </li>
+          </ul>
+
+          <div className="mt-10 flex items-center gap-4">
+            {[
+              { icon: Instagram, href: 'https://instagram.com' },
+              { icon: Twitter, href: 'https://x.com' },
+              { icon: Facebook, href: 'https://facebook.com' },
+            ].map((social) => {
+              const Icon = social.icon
+
+              return (
+                <a key={social.href} href={social.href} target="_blank" rel="noreferrer" className="flex h-11 w-11 items-center justify-center rounded-full bg-brand-purple text-white transition-opacity hover:opacity-90">
+                  <Icon className="h-4 w-4" strokeWidth={1.8} />
+                </a>
+              )
+            })}
           </div>
+        </div>
+      </div>
+
+      <div className="bg-brand-purple px-8 py-4 text-sm text-white/70">
+        <div className="mx-auto max-w-6xl">
+          © {new Date().getFullYear()} Set The Table. All rights reserved.
         </div>
       </div>
     </footer>

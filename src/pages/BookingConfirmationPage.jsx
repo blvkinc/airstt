@@ -69,7 +69,7 @@ const BookingConfirmationPage = () => {
             <CheckCircle2 className="w-10 h-10 text-green-600 flex-shrink-0" />
             <div>
               <h1 className="text-3xl font-bold text-gray-900 mb-2">Order received</h1>
-              <p className="text-gray-600">Your booking request is now backed by your live order record.</p>
+              <p className="text-gray-600">Your booking request has been saved as a local demo order.</p>
               <div className="mt-4 text-sm text-gray-500 space-y-1">
                 <div>Order ID: <span className="font-medium text-gray-900">{order.id}</span></div>
                 <div>Order number: <span className="font-medium text-gray-900">{order.orderNumber || 'Pending assignment'}</span></div>
@@ -80,7 +80,7 @@ const BookingConfirmationPage = () => {
 
           {pendingPayment && (
             <div className="mt-6 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
-              Payment capture is not yet completed in this flow. Your backend order has been created and is currently marked as payment pending.
+              Payment capture is skipped in this demo flow. The order is shown for UI review only.
             </div>
           )}
         </div>

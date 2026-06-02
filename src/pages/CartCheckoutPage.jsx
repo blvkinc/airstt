@@ -94,8 +94,8 @@ const CartCheckoutPage = () => {
                   <div className="bg-gray-50 p-4 rounded-xl border border-gray-100 mb-6 flex items-start gap-3">
                     <Shield strokeWidth={1.5} className="w-5 h-5 text-green-600 mt-0.5" />
                     <div>
-                      <h4 className="text-sm font-semibold text-gray-900">Live backend checkout</h4>
-                      <p className="text-xs text-gray-500 mt-0.5">Submitting creates your real backend order from the authenticated cart. Orders with payment due now continue into Stripe Checkout, while no-upfront orders confirm here. To change your contact details, update your profile first.</p>
+                      <h4 className="text-sm font-semibold text-gray-900">Demo checkout</h4>
+                      <p className="text-xs text-gray-500 mt-0.5">Submitting creates a local demo order from your cart. Payment screens are skipped so the team can focus on the booking UI.</p>
                     </div>
                   </div>
 
@@ -144,7 +144,7 @@ const CartCheckoutPage = () => {
                         <span className="font-medium">AED {summary.offlineDueAmount || 0}</span>
                       </div>
                     )}
-                    <div className="text-xs text-gray-500">Totals come directly from the backend cart contract and are confirmed again at checkout.</div>
+                    <div className="text-xs text-gray-500">Totals are calculated from local demo cart data.</div>
                   </div>
                 </div>
                 <div className="bg-gray-50 p-4 text-center">

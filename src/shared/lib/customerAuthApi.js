@@ -1,9 +1,40 @@
-import { get, post, put } from '../api/apiClient'
-
 const CUSTOMER_TOKEN_KEY = 'stt_customer_token'
 const CUSTOMER_USER_KEY = 'stt_user'
 
+const buildDemoUser = ({ email, firstName = '', lastName = '', phone = '' } = {}) => {
+  const fallbackName = email ? email.split('@')[0] : 'Demo Guest'
+  const name = [firstName, lastName].filter(Boolean).join(' ') || fallbackName
+
+  return {
+    id: 'demo-customer',
+    email: email || 'demo@setthetable.ae',
+    name,
+    phone,
+    firstName,
+    lastName,
+    status: 'demo',
+    emailVerifiedAt: new Date().toISOString(),
+    emailVerificationStatus: 'verified',
+    isEmailVerified: true,
+    lastLoginAt: new Date().toISOString(),
+    memberSince: '2026',
+    accountType: 'Demo',
+    rewardPoints: 355,
+    pointsToNextTier: 145,
+    nextRewardTier: 'Gold',
+    profile: {
+      email: email || 'demo@setthetable.ae',
+      firstName,
+      lastName,
+      phone,
+      residenceCity: 'Dubai',
+      residenceArea: 'Dubai Marina',
+    },
+  }
+}
+
 export const getStoredCustomerToken = () => localStorage.getItem(CUSTOMER_TOKEN_KEY)
+
 export const getStoredCustomerUser = () => {
   const raw = localStorage.getItem(CUSTOMER_USER_KEY)
   if (!raw) return null
@@ -12,42 +43,6 @@ export const getStoredCustomerUser = () => {
     return JSON.parse(raw)
   } catch {
     return null
-  }
-}
-
-const unwrapPayload = (payload) => payload?.data || payload || {}
-
-const buildProfile = (profile = {}) => ({
-  firstName: profile.first_name || '',
-  lastName: profile.last_name || '',
-  phone: profile.phone_number || profile.whatsapp_number || '',
-  residenceCity: '',
-  residenceArea: '',
-})
-
-const mapCustomer = (payload) => {
-  const resolvedPayload = unwrapPayload(payload)
-  const customer = resolvedPayload?.customer || resolvedPayload || {}
-  const user = customer.user || {}
-  const profile = customer.profile || {}
-  const verification = customer.verification?.email || {}
-
-  return {
-    id: user.id ?? null,
-    email: user.email ?? '',
-    name: user.name || [profile.first_name, profile.last_name].filter(Boolean).join(' ') || user.email || '',
-    phone: profile.phone_number || profile.whatsapp_number || '',
-    firstName: profile.first_name || '',
-    lastName: profile.last_name || '',
-    status: user.status || '',
-    emailVerifiedAt: verification.verified_at || user.email_verified_at || null,
-    emailVerificationStatus: verification.status || (user.email_verified_at ? 'verified' : 'pending'),
-    isEmailVerified: verification.is_verified ?? !!user.email_verified_at,
-    lastLoginAt: user.last_login_at || null,
-    profile: {
-      email: user.email ?? '',
-      ...buildProfile(profile),
-    },
   }
 }
 
@@ -61,87 +56,80 @@ export const clearStoredCustomerSession = () => {
   localStorage.removeItem(CUSTOMER_USER_KEY)
 }
 
-const finalizeSession = (payload) => {
-  const resolvedPayload = unwrapPayload(payload)
+const finalizeDemoSession = (user) => {
   const session = {
-    token: resolvedPayload?.token || null,
-    user: mapCustomer(resolvedPayload),
+    token: 'demo-customer-token',
+    user,
   }
 
   persistCustomerSession(session)
-
   return { success: true, ...session }
 }
 
-export const loginCustomerWithApi = async ({ email, password }) => finalizeSession(await post('/customer/auth/login', {
-  body: { email, password },
-}))
-
-export const registerCustomerWithApi = async ({ email, password }) => finalizeSession(await post('/customer/auth/register', {
-  body: {
+export const loginCustomerWithApi = async ({ email }) => {
+  const storedUser = getStoredCustomerUser()
+  return finalizeDemoSession(storedUser || buildDemoUser({
     email,
-    password,
-    password_confirmation: password,
-  },
-}))
+    firstName: 'Demo',
+    lastName: 'Guest',
+    phone: '+971 50 000 0000',
+  }))
+}
+
+export const registerCustomerWithApi = async ({ email }) => finalizeDemoSession(buildDemoUser({ email }))
 
 export const fetchCurrentCustomerWithApi = async () => {
-  const payload = await get('/customer/auth/me')
-  const user = mapCustomer(payload)
-  persistCustomerSession({ token: getStoredCustomerToken(), user })
+  const user = getStoredCustomerUser()
+  if (!user) throw new Error('No demo customer session')
   return user
 }
 
 export const updateCustomerProfileWithApi = async ({ firstName, lastName, phone }) => {
-  const payload = await put('/me/profile', {
-    body: {
-      first_name: firstName || null,
-      last_name: lastName || null,
-      phone_number: phone || null,
+  const currentUser = getStoredCustomerUser() || buildDemoUser()
+  const updatedUser = {
+    ...currentUser,
+    name: [firstName, lastName].filter(Boolean).join(' ') || currentUser.name,
+    phone: phone || '',
+    firstName: firstName || '',
+    lastName: lastName || '',
+    profile: {
+      ...(currentUser.profile || {}),
+      firstName: firstName || '',
+      lastName: lastName || '',
+      phone: phone || '',
     },
-  })
+  }
 
-  const user = mapCustomer(payload)
-  persistCustomerSession({ token: getStoredCustomerToken(), user })
-  return user
+  persistCustomerSession({ token: getStoredCustomerToken() || 'demo-customer-token', user: updatedUser })
+  return updatedUser
 }
 
 export const logoutCustomerWithApi = async () => {
-  try {
-    await post('/customer/auth/logout')
-  } finally {
-    clearStoredCustomerSession()
-  }
+  clearStoredCustomerSession()
 }
 
-export const requestCustomerPasswordResetWithApi = async ({ email }) => {
-  return post('/customer/auth/forgot-password', {
-    body: { email },
-  })
-}
+export const requestCustomerPasswordResetWithApi = async ({ email }) => ({
+  message: 'Demo password reset queued.',
+  debug: {
+    password_reset_token: 'demo-reset-token',
+    email,
+  },
+})
 
-export const resetCustomerPasswordWithApi = async ({ email, token, password, passwordConfirmation }) => {
-  return post('/customer/auth/reset-password', {
-    body: {
-      email,
-      token,
-      password,
-      password_confirmation: passwordConfirmation,
-    },
-  })
-}
+export const resetCustomerPasswordWithApi = async () => ({
+  message: 'Demo password updated.',
+})
 
-export const verifyCustomerEmailWithApi = async ({ token }) => {
-  const payload = await post('/customer/auth/verify-email/confirm', {
-    body: { token },
-  })
+export const verifyCustomerEmailWithApi = async () => ({
+  outcome: 'already_verified',
+  user: getStoredCustomerUser(),
+  verification: {
+    status: 'verified',
+    is_verified: true,
+  },
+  message: 'Demo account is already verified.',
+})
 
-  return {
-    outcome: payload?.data?.outcome || 'invalid_or_expired',
-    user: payload?.data?.customer ? mapCustomer(payload.data.customer) : null,
-    verification: payload?.data?.verification?.email || null,
-    message: payload?.message || 'Unable to verify your email.',
-  }
-}
-
-export const resendCustomerVerificationWithApi = async () => post('/customer/auth/verify-email/resend')
+export const resendCustomerVerificationWithApi = async () => ({
+  message: 'Demo verification email sent.',
+})

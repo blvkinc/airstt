@@ -53,7 +53,9 @@ function AppShell() {
     <main className="flex-1">
       <Routes>
         <Route path="/" element={<HomePage />} />
+        <Route path="/index.html" element={<HomePage />} />
         <Route path="/explore" element={<ExplorePage />} />
+        <Route path="/experiences" element={<ExplorePage />} />
         <Route path="/events" element={<EventsPage />} />
         <Route path="/events/:id" element={<EventDetailsPage />} />
         <Route path="/venues" element={<VenuesPage />} />

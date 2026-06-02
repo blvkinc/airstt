@@ -1,153 +1,144 @@
-import { get, post } from './apiClient'
-import { customerApi } from './apiEndpoints'
+import { bookingFixtures } from '../../features/profile/profileFixtures'
+import { buildDemoCartSummary, readDemoCartItems, writeDemoCartItems } from './customerCartApi'
 
-const toNumber = (value) => {
-  const numeric = Number(value)
-  return Number.isFinite(numeric) ? numeric : 0
-}
+const DEMO_ORDERS_KEY = 'stt_demo_orders'
 
-const formatOccurrenceDate = (value) => {
-  if (!value) return ''
-  const normalized = String(value)
-  return normalized.includes('T') ? normalized.slice(0, 10) : normalized
-}
+const readOrders = () => {
+  const raw = localStorage.getItem(DEMO_ORDERS_KEY)
+  if (!raw) return []
 
-const formatOccurrenceTime = (value) => {
-  if (!value) return ''
-  const normalized = String(value)
-  return normalized.includes('T') ? normalized.slice(11, 16) : normalized
-}
-
-const normalizeBookingItem = (item) => {
-  if (!item || typeof item !== 'object') return null
-
-  const snapshot = item.snapshot_json || {}
-  const snapshotEvent = snapshot.event || {}
-  const snapshotVenue = snapshot.venue || {}
-  const snapshotOccurrence = snapshot.occurrence || {}
-  const snapshotPackage = snapshot.package || {}
-  const eventOccurrence = item.eventOccurrence || item.event_occurrence || {}
-  const eventPackage = item.eventPackage || item.event_package || {}
-  const event = eventPackage.event || {}
-  const selectedVariant = snapshotPackage.selected_variant || null
-
-  return {
-    id: item.id ?? null,
-    status: item.status || 'pending',
-    eventId: item.event_id ?? snapshotEvent.id ?? event.id ?? null,
-    event: snapshotEvent.title || event.title || 'Event',
-    venue: snapshotVenue.name || event?.venue?.name || '',
-    slotKey: snapshotOccurrence.slot_key || item.slot_key || eventOccurrence.slot_key || formatOccurrenceDate(snapshotOccurrence.occurrence_date || eventOccurrence.occurrence_date || eventOccurrence.starts_at),
-    occurrenceDate: formatOccurrenceDate(snapshotOccurrence.occurrence_date || eventOccurrence.occurrence_date || eventOccurrence.starts_at),
-    date: formatOccurrenceDate(snapshotOccurrence.occurrence_date || eventOccurrence.occurrence_date || eventOccurrence.starts_at),
-    time: formatOccurrenceTime(snapshotOccurrence.starts_at || eventOccurrence.starts_at),
-    packageId: item.event_package_id ?? snapshotPackage.id ?? eventPackage.id ?? null,
-    packageFamilyKey: snapshotPackage.family_key || eventPackage.family_key || null,
-    packageVariantKey: selectedVariant?.code || snapshotPackage.variant_key || eventPackage.variant_key || null,
-    packageVariantLabel: selectedVariant?.label || snapshotPackage.audience_label || eventPackage.audience_label || null,
-    packageType: snapshotPackage.package_type || eventPackage.package_type || null,
-    packageName: snapshotPackage.display_name || snapshotPackage.fallback_name || eventPackage.display_name || eventPackage.name || 'Package',
-    guests: item.guest_count ?? snapshotPackage.guest_count ?? 1,
-    quantity: item.quantity ?? 1,
-    lineTotal: toNumber(item.line_total),
-    onlineDueAmount: toNumber(item.online_due_amount),
-    offlineDueAmount: toNumber(item.offline_due_amount),
-    paymentMode: item.payment_mode || snapshotPackage.payment_mode || 'full',
-    selectedVariant,
-    eTicket: item.e_ticket_artifact || null,
+  try {
+    const parsed = JSON.parse(raw)
+    return Array.isArray(parsed) ? parsed : []
+  } catch {
+    return []
   }
 }
 
-const normalizeBooking = (booking) => {
-  if (!booking || typeof booking !== 'object') return null
+const writeOrders = (orders) => {
+  localStorage.setItem(DEMO_ORDERS_KEY, JSON.stringify(orders))
+}
 
-  const items = Array.isArray(booking.bookingItems || booking.booking_items)
-    ? (booking.bookingItems || booking.booking_items).map(normalizeBookingItem).filter(Boolean)
-    : []
+const buildBookingFromCartItem = (item, orderId, index) => ({
+  id: `${orderId}-booking-${index + 1}`,
+  bookingReference: `DEMO-${orderId}-${index + 1}`,
+  status: 'confirmed',
+  orderId,
+  orderNumber: `STT-DEMO-${orderId}`,
+  venue: item.venue,
+  event: item.eventTitle,
+  date: item.date || item.occurrenceDate,
+  time: item.time || '',
+  occurrenceDate: item.occurrenceDate || item.date,
+  packageName: item.packageName,
+  packageVariantLabel: item.packageVariantLabel,
+  guests: item.guests || item.quantity || 1,
+  price: item.lineTotal || 0,
+  image: item.image || null,
+  receiptArtifact: {
+    file_name: `receipt-${orderId}-${index + 1}.pdf`,
+    download_url: '',
+  },
+  items: [{
+    id: item.id,
+    status: 'confirmed',
+    eventId: item.eventId,
+    event: item.eventTitle,
+    venue: item.venue,
+    slotKey: item.slotKey,
+    occurrenceDate: item.occurrenceDate,
+    date: item.date || item.occurrenceDate,
+    time: item.time || '',
+    packageId: item.packageId,
+    packageFamilyKey: item.packageFamilyKey,
+    packageVariantKey: item.packageVariantKey,
+    packageVariantLabel: item.packageVariantLabel,
+    packageType: item.packageTypeLabel,
+    packageName: item.packageName,
+    guests: item.guests || item.quantity || 1,
+    quantity: item.quantity || 1,
+    lineTotal: item.lineTotal || 0,
+    onlineDueAmount: item.onlineDueAmount || 0,
+    offlineDueAmount: item.offlineDueAmount || 0,
+    paymentMode: item.paymentMode || 'full',
+    selectedVariant: item.selectedVariant || null,
+    eTicket: null,
+  }],
+})
 
-  const firstItem = items[0] || {}
+const buildOrderFromCart = (items) => {
+  const summary = buildDemoCartSummary(items)
+  const id = Date.now()
+  const bookings = items.map((item, index) => buildBookingFromCartItem(item, id, index))
 
   return {
-    id: booking.id ?? null,
-    bookingReference: booking.booking_reference || '',
-    status: booking.status || 'pending',
-    orderId: booking.order_id ?? booking.order?.id ?? null,
-    orderNumber: booking.order?.order_number || '',
-    venue: booking.venue?.name || firstItem.venue || '',
-    event: firstItem.event || 'Booking',
-    date: firstItem.date || '',
-    time: firstItem.time || '',
-    occurrenceDate: firstItem.occurrenceDate || '',
-    packageName: firstItem.packageName || '',
-    packageVariantLabel: firstItem.packageVariantLabel || '',
-    guests: firstItem.guests || 1,
-    price: firstItem.lineTotal || 0,
-    image: null,
-    receiptArtifact: booking.receipt_artifact || null,
-    items,
-  }
-}
-
-const normalizeOrder = (order) => {
-  if (!order || typeof order !== 'object') return null
-
-  const bookings = Array.isArray(order.venueBookings || order.venue_bookings)
-    ? (order.venueBookings || order.venue_bookings).map(normalizeBooking).filter(Boolean)
-    : []
-
-  const items = bookings.flatMap((booking) => booking.items || [])
-
-  return {
-    id: order.id ?? null,
-    orderNumber: order.order_number || '',
-    status: order.status || 'pending',
-    currency: order.currency || 'AED',
-    placedAt: order.placed_at || order.created_at || '',
-    grossTotal: toNumber(order.gross_total),
-    onlineDueTotal: toNumber(order.online_due_total),
-    offlineDueTotal: toNumber(order.offline_due_total),
-    payment: Array.isArray(order.payments) ? order.payments[0] || null : null,
-    bookings,
-    items,
-  }
-}
-
-export const submitCustomerCheckout = async ({ signal } = {}) => {
-  const payload = await post(customerApi.checkout.create(), { signal })
-
-  return {
-    order: normalizeOrder(payload?.order),
-    payment: payload?.payment || null,
-    checkoutSession: payload?.checkout_session || null,
-  }
-}
-
-export const createCustomerPaymentSession = async ({ paymentId, signal } = {}) => {
-  const payload = await post(customerApi.checkout.paymentSession(paymentId), { signal })
-  return payload?.checkout_session || null
-}
-
-export const fetchCustomerPaymentStatus = async ({ orderId, paymentId, sessionId, signal } = {}) => {
-  return get(customerApi.orders.paymentStatus(orderId), {
-    signal,
-    query: {
-      payment: paymentId,
-      session_id: sessionId,
+    id,
+    orderNumber: `STT-DEMO-${id}`,
+    status: 'confirmed',
+    currency: 'AED',
+    placedAt: new Date().toISOString(),
+    grossTotal: summary.lineTotal,
+    onlineDueTotal: summary.onlineDueAmount,
+    offlineDueTotal: summary.offlineDueAmount,
+    payment: {
+      id: `demo-payment-${id}`,
+      status: summary.onlineDueAmount > 0 ? 'paid' : 'not_required',
     },
-  })
+    bookings,
+    items: bookings.flatMap((booking) => booking.items),
+  }
 }
 
-export const fetchCustomerOrder = async ({ orderId, signal } = {}) => {
-  const payload = await get(customerApi.orders.show(orderId), { signal })
-  return normalizeOrder(payload?.data)
+const getSeedBookings = () => bookingFixtures.map((booking) => ({
+  ...booking,
+  bookingReference: `DEMO-SEED-${booking.id}`,
+  packageName: booking.package,
+  occurrenceDate: booking.date,
+  receiptArtifact: null,
+  items: [],
+}))
+
+export const submitCustomerCheckout = async () => {
+  const cartItems = readDemoCartItems()
+  if (cartItems.length === 0) {
+    throw new Error('Your demo cart is empty.')
+  }
+
+  const order = buildOrderFromCart(cartItems)
+  writeOrders([order, ...readOrders()])
+  writeDemoCartItems([])
+
+  return {
+    order,
+    payment: order.payment,
+    checkoutSession: null,
+  }
 }
 
-export const fetchCustomerOrders = async ({ signal } = {}) => {
-  const payload = await get(customerApi.orders.index(), { signal })
-  return Array.isArray(payload?.data) ? payload.data.map(normalizeOrder).filter(Boolean) : []
+export const createCustomerPaymentSession = async () => ({
+  url: '',
+})
+
+export const fetchCustomerPaymentStatus = async ({ orderId } = {}) => ({
+  state: 'confirmed',
+  payment_status: 'paid',
+  order_number: `STT-DEMO-${orderId}`,
+  retry_eligible: false,
+  ui: {
+    title: 'Demo payment confirmed',
+    message: 'This prototype confirms payment locally.',
+  },
+})
+
+export const fetchCustomerOrder = async ({ orderId } = {}) => {
+  const order = readOrders().find((entry) => String(entry.id) === String(orderId))
+  if (!order) throw new Error('Demo order not found.')
+  return order
 }
 
-export const fetchCustomerBookings = async ({ signal } = {}) => {
-  const payload = await get(customerApi.bookings.index(), { signal })
-  return Array.isArray(payload?.data) ? payload.data.map(normalizeBooking).filter(Boolean) : []
+export const fetchCustomerOrders = async () => readOrders()
+
+export const fetchCustomerBookings = async () => {
+  const orderBookings = readOrders().flatMap((order) => order.bookings || [])
+  return [...orderBookings, ...getSeedBookings()]
 }

@@ -840,9 +840,9 @@ const baseEvents = [
     id: 8,
     title: "Valentine's Day Special Dinner",
     venueId: 7,
-    image: 'https://images.unsplash.com/photo-1518791841217-8f162f1e1131?w=1600&h=900&fit=crop',
+    image: 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=1600&h=900&fit=crop',
     images: [
-      'https://images.unsplash.com/photo-1518791841217-8f162f1e1131?w=1600&h=900&fit=crop',
+      'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=1600&h=900&fit=crop',
       'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=800&h=600&fit=crop',
       'https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=800&h=600&fit=crop',
       'https://images.unsplash.com/photo-1551218808-94e220e084d2?w=800&h=600&fit=crop',
@@ -982,9 +982,9 @@ const baseEvents = [
     id: 11,
     title: 'Desert Safari & Dinner',
     venueId: 8,
-    image: 'https://images.unsplash.com/photo-1451337516015-6b6fcd1c56ab?w=1600&h=900&fit=crop',
+    image: 'https://images.unsplash.com/photo-1509316785289-025f5b846b35?w=1600&h=900&fit=crop',
     images: [
-      'https://images.unsplash.com/photo-1451337516015-6b6fcd1c56ab?w=1600&h=900&fit=crop',
+      'https://images.unsplash.com/photo-1509316785289-025f5b846b35?w=1600&h=900&fit=crop',
       'https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?w=800&h=600&fit=crop',
       'https://images.unsplash.com/photo-1506748686214-e9df14d4d9d0?w=800&h=600&fit=crop',
       'https://images.unsplash.com/photo-1497366811353-6870744d04b2?w=800&h=600&fit=crop',
