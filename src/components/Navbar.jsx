@@ -34,15 +34,17 @@ const Navbar = () => {
   const navigate = useNavigate()
   const { isAuthenticated } = useAuth()
   const usesDiscoveryHeader = discoveryPaths.includes(location.pathname)
+  const hideMobileTopHeader = location.pathname === '/profile'
   const mobileSearchOpen = location.pathname === '/map' || ((location.pathname === '/' || location.pathname === '/index.html') && new URLSearchParams(location.search).get('search') === 'open')
   const profileHref = isAuthenticated ? '/profile' : '/auth?redirect=%2Fprofile'
   const bookingsHref = isAuthenticated ? '/profile?tab=bookings' : '/auth?redirect=%2Fprofile%3Ftab%3Dbookings'
+  const profileTab = new URLSearchParams(location.search).get('tab')
 
   const bottomNavigationItems = [
     { href: '/', label: 'Home', icon: HomeIcon, active: (location.pathname === '/' || location.pathname === '/index.html') && !mobileSearchOpen },
     { href: '/map', label: 'Search', icon: SearchIcon, active: mobileSearchOpen || location.pathname === '/explore' },
-    { href: bookingsHref, label: 'My Bookings', icon: Calendar, active: location.pathname === '/profile' && new URLSearchParams(location.search).get('tab') === 'bookings' },
-    { href: profileHref, label: 'Profile', icon: User, active: location.pathname === '/profile' && new URLSearchParams(location.search).get('tab') !== 'bookings' },
+    { href: bookingsHref, label: 'My Bookings', icon: Calendar, active: location.pathname === '/profile' && ['bookings', 'activity'].includes(profileTab) },
+    { href: profileHref, label: 'Profile', icon: User, active: location.pathname === '/profile' && !['bookings', 'activity'].includes(profileTab) },
   ]
 
   const mobileBottomNav = (
@@ -112,19 +114,21 @@ const Navbar = () => {
           </div>
         </div>
 
-        <div className="flex h-[72px] w-[100vw] max-w-[390px] items-center justify-between px-5 md:hidden">
-          <Link to="/" className="block">
-            <img src={sttLogo} alt="Set The Table" className="h-9 w-auto" style={brandLogoFilter} />
-          </Link>
-          <div className="flex items-center gap-2">
-            <button type="button" onClick={() => setSearchOpen(true)} aria-label="Search" className="flex h-10 w-10 items-center justify-center rounded-full bg-white text-gray-700 shadow-[0_2px_12px_rgba(15,23,42,0.12)] ring-1 ring-black/5">
-              <SearchIcon className="h-4 w-4" strokeWidth={2} />
-            </button>
-            <button type="button" onClick={() => setMobileMenuOpen(true)} aria-label="Open menu" className="flex h-10 w-10 items-center justify-center rounded-full bg-gray-100 text-gray-800">
-              <Menu className="h-5 w-5" strokeWidth={1.8} />
-            </button>
+        {!hideMobileTopHeader && (
+          <div className="flex h-[72px] w-[100vw] max-w-[390px] items-center justify-between px-5 md:hidden">
+            <Link to="/" className="block">
+              <img src={sttLogo} alt="Set The Table" className="h-9 w-auto" style={brandLogoFilter} />
+            </Link>
+            <div className="flex items-center gap-2">
+              <button type="button" onClick={() => setSearchOpen(true)} aria-label="Search" className="flex h-10 w-10 items-center justify-center rounded-full bg-white text-gray-700 shadow-[0_2px_12px_rgba(15,23,42,0.12)] ring-1 ring-black/5">
+                <SearchIcon className="h-4 w-4" strokeWidth={2} />
+              </button>
+              <button type="button" onClick={() => setMobileMenuOpen(true)} aria-label="Open menu" className="flex h-10 w-10 items-center justify-center rounded-full bg-gray-100 text-gray-800">
+                <Menu className="h-5 w-5" strokeWidth={1.8} />
+              </button>
+            </div>
           </div>
-        </div>
+        )}
       </motion.header>
 
       {mobileMenuOpen && (

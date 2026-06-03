@@ -79,10 +79,10 @@ export function EventSidebar({
 
   return (
     <div className="sticky top-28 space-y-4">
-      <Card className="overflow-hidden rounded-2xl border-0 shadow-xl ring-1 ring-black/5">
+      <Card className="overflow-hidden rounded-[24px] border-gray-200 bg-white shadow-[0_8px_30px_rgba(0,0,0,0.10)]">
         <CardContent className="p-6">
           <div className="mb-6 space-y-3" id="date-selection">
-            <div className="rounded-2xl border border-gray-100 bg-gradient-to-b from-gray-50 to-white p-4">
+            <div className="rounded-[20px] border border-gray-100 bg-white p-4 shadow-[0_4px_18px_rgba(0,0,0,0.04)]">
               <button
                 type="button"
                 className="flex w-full items-center justify-between gap-3 text-left"
@@ -94,7 +94,7 @@ export function EventSidebar({
                   <label className="mb-1 block text-sm font-semibold text-gray-700">Select date</label>
                   <p className="text-sm leading-6 text-gray-500">
                     {selectedOccurrence
-                      ? `${selectedOccurrence.date}${selectedOccurrence.time ? ` • ${selectedOccurrence.time}` : ''}`
+                      ? `${selectedOccurrence.date}${selectedOccurrence.time ? ` - ${selectedOccurrence.time}` : ''}`
                       : 'Choose a published date to unlock packages.'}
                   </p>
                 </div>
@@ -116,7 +116,7 @@ export function EventSidebar({
           </div>
 
           {!selectedOccurrence ? (
-            <div className="mb-4 rounded-xl border border-gray-100 bg-gray-50 px-4 py-6 text-center">
+            <div className="mb-4 rounded-[18px] border border-gray-100 bg-gray-50 px-4 py-6 text-center">
               <Calendar className="mx-auto mb-3 h-8 w-8 text-gray-400" />
               <p className="text-sm font-medium text-gray-600">Please select a published, bookable date to view packages.</p>
             </div>
@@ -125,13 +125,13 @@ export function EventSidebar({
               <div className="mb-6">
                 <label className="mb-2 block text-sm font-semibold text-gray-700">Select package</label>
                 <Select value={selectedPackageId} onValueChange={setSelectedPackageId}>
-                  <SelectTrigger className="h-12 w-full rounded-xl border-gray-200">
+                  <SelectTrigger className="h-12 w-full rounded-2xl border-gray-200 bg-white shadow-sm">
                     <SelectValue placeholder="Choose a package" />
                   </SelectTrigger>
                   <SelectContent>
                     {availablePackages.map((pkg) => {
                       const packageSelectionValue = String(pkg.selectionKey ?? pkg.occurrencePackageId ?? pkg.id)
-                      const packageLabel = [pkg.displayName || pkg.name, pkg.variantLabel, pkg.packageTypeLabel].filter(Boolean).join(' • ')
+                      const packageLabel = [pkg.displayName || pkg.name, pkg.variantLabel, pkg.packageTypeLabel].filter(Boolean).join(' - ')
                       const packageSuffix = !pkg.isBookable && pkg.cardStatusLabel ? `(${pkg.cardStatusLabel})` : ''
 
                       return (
@@ -145,13 +145,13 @@ export function EventSidebar({
               </div>
 
               {!selectedPackage ? (
-                <div className="mb-4 rounded-xl border border-orange-100 bg-orange-50 px-4 py-4 text-center">
+                <div className="mb-4 rounded-[18px] border border-orange-100 bg-orange-50 px-4 py-4 text-center">
                   <Sparkles className="mx-auto mb-2 h-6 w-6 text-orange-500" />
                   <p className="text-sm font-medium text-orange-800">Select a bookable package above to continue.</p>
                 </div>
               ) : (
                 <>
-                  <div className="mb-4 rounded-xl border border-gray-100 bg-gray-50 px-4 py-4">
+                  <div className="mb-4 rounded-[18px] border border-gray-100 bg-gray-50 px-4 py-4">
                     <div className="flex flex-wrap items-start justify-between gap-3">
                       <div>
                         <p className="text-sm font-semibold text-gray-900">{selectedPackage.displayName || selectedPackage.name}</p>
@@ -181,22 +181,22 @@ export function EventSidebar({
                     </div>
                   </div>
 
-                  <div className="mb-4 rounded-xl border border-gray-200 p-3">
+                  <div className="mb-4 rounded-[18px] border border-gray-200 p-4">
                     <label className="mb-1 block text-sm font-semibold text-gray-800">Quantity</label>
                     <div className="flex items-center justify-between">
-                      <span className="text-sm">{quantity}</span>
+                      <span className="text-sm font-semibold">{quantity}</span>
                       <div className="flex gap-2">
-                        <button type="button" onClick={() => setQuantity(Math.max(1, quantity - 1))} className="h-6 w-6 rounded-full border" aria-label="Decrease quantity">
+                        <button type="button" onClick={() => setQuantity(Math.max(1, quantity - 1))} className="h-8 w-8 rounded-full border border-gray-300 text-sm font-semibold transition hover:border-gray-950" aria-label="Decrease quantity">
                           -
                         </button>
-                        <button type="button" onClick={() => setQuantity(quantity + 1)} className="h-6 w-6 rounded-full border" aria-label="Increase quantity">
+                        <button type="button" onClick={() => setQuantity(quantity + 1)} className="h-8 w-8 rounded-full border border-gray-300 text-sm font-semibold transition hover:border-gray-950" aria-label="Increase quantity">
                           +
                         </button>
                       </div>
                     </div>
                   </div>
 
-                  <div className="mb-6 rounded-xl border border-gray-200 p-4">
+                  <div className="mb-6 rounded-[18px] border border-gray-200 p-4">
                     <div className="flex items-start justify-between gap-3">
                       <div>
                         <h3 className="text-sm font-semibold text-gray-900">Payment summary</h3>
@@ -210,17 +210,17 @@ export function EventSidebar({
                         className={`min-w-[92px] text-right text-xs font-medium text-gray-500 ${pricingRefreshPending ? 'visible' : 'invisible'}`}
                         aria-live="polite"
                       >
-                        Updating price…
+                        Updating price...
                       </span>
                     </div>
                     <div className="mt-4 space-y-3 text-sm text-gray-600">
                       <div className="flex items-center justify-between gap-4">
                         <span>Full amount</span>
-                        <span className="font-semibold text-gray-900">{fullAmount || '—'}</span>
+                        <span className="font-semibold text-gray-900">{fullAmount || '-'}</span>
                       </div>
                       <div className="flex items-center justify-between gap-4">
                         <span>Due now</span>
-                        <span className="font-semibold text-gray-900">{dueNow || '—'}</span>
+                        <span className="font-semibold text-gray-900">{dueNow || '-'}</span>
                       </div>
                       {remainingAmount && Number(remainingAmountValue) > 0 && (
                         <div className="flex items-center justify-between gap-4">
@@ -241,7 +241,7 @@ export function EventSidebar({
                   <Button
                     size="lg"
                     disabled={actionsDisabled}
-                    className="h-12 w-full rounded-xl bg-gradient-to-r from-brand-purple to-brand-orange text-lg font-semibold shadow-lg hover:opacity-90 disabled:from-gray-300 disabled:to-gray-300 disabled:text-gray-600"
+                    className="h-12 w-full text-base disabled:bg-gray-300 disabled:text-gray-600"
                     onClick={() => {
                       const bookingSearch = new URLSearchParams({
                         occurrence_date: String(selectedOccurrence?.occurrenceDate || selectedOccurrence?.date || ''),
@@ -262,7 +262,7 @@ export function EventSidebar({
                   </Button>
                   <Button
                     variant="outline"
-                    className="mt-3 h-11 w-full rounded-xl border-gray-200"
+                    className="mt-3 h-11 w-full"
                     disabled={actionsDisabled}
                     onClick={async () =>
                       addToCart({
@@ -301,7 +301,7 @@ export function EventSidebar({
         </CardContent>
       </Card>
 
-      <Card className="rounded-2xl border border-gray-100 shadow-sm">
+      <Card className="rounded-[22px] border border-gray-100 shadow-[0_4px_18px_rgba(0,0,0,0.05)]">
         <CardContent className="p-5">
           <h2 className="text-base font-semibold text-gray-900">Location</h2>
           <div className="mt-3 flex items-start gap-3 text-sm text-gray-600">
@@ -309,14 +309,14 @@ export function EventSidebar({
             <div>
               <p className="font-medium text-gray-900">{event.venueDetails?.name || event.venue}</p>
               <p className="mt-1 leading-6">{venueLocationSummary[0] || 'Location details will be shared once published.'}</p>
-              {venueLocationSummary.length > 1 && <p className="mt-1 text-xs text-gray-500">{venueLocationSummary.slice(1).join(' • ')}</p>}
+              {venueLocationSummary.length > 1 && <p className="mt-1 text-xs text-gray-500">{venueLocationSummary.slice(1).join(' - ')}</p>}
             </div>
           </div>
         </CardContent>
       </Card>
 
       {event.dressCode && (
-        <Card className="rounded-2xl border border-gray-100 shadow-sm">
+        <Card className="rounded-[22px] border border-gray-100 shadow-[0_4px_18px_rgba(0,0,0,0.05)]">
           <CardContent className="p-5">
             <h2 className="text-base font-semibold text-gray-900">Dress code</h2>
             <p className="mt-2 text-sm leading-6 text-gray-600">{event.dressCode}</p>

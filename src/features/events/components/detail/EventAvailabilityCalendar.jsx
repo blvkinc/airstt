@@ -178,7 +178,7 @@ function AvailabilityCalendarBase({
                     aria-selected={isSelected}
                     aria-label={srLabel}
                     disabled={!isSelectable}
-                    title={compact ? `${formatOccurrenceFullDate(occurrence)} • ${statusConfig.label}` : undefined}
+                    title={compact ? `${formatOccurrenceFullDate(occurrence)} - ${statusConfig.label}` : undefined}
                     className={cn(
                       'group relative min-w-0 border transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-purple focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:hover:border-current disabled:hover:bg-current/0',
                       compact
@@ -250,8 +250,8 @@ function AvailabilityCalendarBase({
       {showSelectedSummary && selectedOccurrence && (
         <div className="rounded-2xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-700">
           <span className="font-semibold text-gray-900">Selected:</span> {selectedOccurrence.date}
-          {selectedOccurrence.time ? ` • ${selectedOccurrence.time}` : ''}
-          {' • '}
+          {selectedOccurrence.time ? ` - ${selectedOccurrence.time}` : ''}
+          {' - '}
           {DAY_STATUS_CONFIG[getDayStatusKey(selectedOccurrence)].label}
         </div>
       )}

@@ -1,6 +1,6 @@
 import { Check, HelpCircle } from 'lucide-react'
 
-const sectionCardClassName = 'rounded-3xl border border-gray-100 bg-white p-6 shadow-sm sm:p-8'
+const sectionClassName = 'border-t border-gray-100 pt-8'
 
 const formatOfferingsHeading = (eventTitle) => {
   if (!eventTitle) return 'What this event offers'
@@ -15,12 +15,12 @@ export function EventOverview({ event }) {
 
   return (
     <div className="space-y-6">
-      <section className={sectionCardClassName} aria-labelledby="event-about-heading">
+      <section className="pb-2" aria-labelledby="event-about-heading">
         <h2 id="event-about-heading" className="text-2xl font-bold text-gray-900">About this event</h2>
         <p className="mt-4 text-base leading-7 text-gray-600 sm:text-lg">{event.description || 'Event details will be published here as soon as they are available.'}</p>
       </section>
 
-      <section className={sectionCardClassName} aria-labelledby="event-offerings-heading">
+      <section className={sectionClassName} aria-labelledby="event-offerings-heading">
         <h2 id="event-offerings-heading" className="text-2xl font-bold text-gray-900">{formatOfferingsHeading(event.title)}</h2>
         {offerings.length > 0 ? (
           <div className="mt-6 grid gap-4 md:grid-cols-2">
@@ -46,7 +46,7 @@ export function EventOverview({ event }) {
         )}
       </section>
 
-      <section className={sectionCardClassName} aria-labelledby="event-know-heading">
+      <section className={sectionClassName} aria-labelledby="event-know-heading">
         <h2 id="event-know-heading" className="text-2xl font-bold text-gray-900">Things to know</h2>
 
         {(policies.length > 0 || accessibility.length > 0) && (

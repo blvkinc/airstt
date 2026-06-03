@@ -47,7 +47,7 @@ export function EventPackages({ occurrence, showDatePrompt, selectedPackageId, o
     <div className="space-y-6">
       <div>
         <h2 className="mb-2 text-2xl font-bold text-gray-900">Choose your package</h2>
-        <p className="text-gray-600">{occurrence ? `${occurrence.date}${occurrence.time ? ` • ${occurrence.time}` : ''}` : 'Select a date to see package availability.'}</p>
+        <p className="text-gray-600">{occurrence ? `${occurrence.date}${occurrence.time ? ` - ${occurrence.time}` : ''}` : 'Select a date to see package availability.'}</p>
       </div>
 
       {showDatePrompt && (
@@ -111,7 +111,7 @@ export function EventPackages({ occurrence, showDatePrompt, selectedPackageId, o
                     {pkg.originalPrice && pkg.originalPrice !== pkg.price && <span className="text-sm text-stone-400 line-through">AED {pkg.originalPrice}</span>}
                   </div>
                   <Button
-                    className={`mt-4 w-full rounded-xl ${pkg.isBookable ? 'bg-stone-950 text-white hover:bg-stone-800 disabled:bg-stone-200 disabled:text-stone-500' : getUnavailableButtonClassName(pkg.cardStatusLabel)}`}
+                    className={`mt-4 w-full rounded-full ${pkg.isBookable ? 'bg-stone-950 text-white hover:bg-stone-800 disabled:bg-stone-200 disabled:text-stone-500' : getUnavailableButtonClassName(pkg.cardStatusLabel)}`}
                     disabled={!pkg.isBookable}
                     onClick={() => onSelectPackage(pkg)}
                   >

@@ -28,11 +28,11 @@ function AvailabilitySnapshotCard({ occurrence, isSelected, onSelectOccurrence }
         <div className="min-w-0 space-y-2">
           <div className="flex flex-wrap items-center gap-2">
             <p className="text-sm font-semibold text-gray-900">{dateParts.weekday}</p>
-            <span className="text-sm text-gray-400">•</span>
+            <span className="text-sm text-gray-300">|</span>
             <p className="text-sm text-gray-600">{dateParts.fullDate}</p>
             {occurrence?.time && (
               <>
-                <span className="text-sm text-gray-400">•</span>
+                <span className="text-sm text-gray-300">|</span>
                 <p className="text-sm font-medium text-gray-700">{occurrence.time}</p>
               </>
             )}

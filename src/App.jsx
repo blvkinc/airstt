@@ -50,10 +50,11 @@ class AppErrorBoundary extends React.Component {
 
 function AppShell() {
   const location = useLocation()
-  const hideFooter = location.pathname === '/map'
+  const hideChrome = location.pathname.startsWith('/auth')
+  const hideFooter = location.pathname === '/map' || hideChrome
 
   return <div className="min-h-screen flex flex-col">
-    <Navbar />
+    {!hideChrome && <Navbar />}
     <main className="flex-1">
       <Routes>
         <Route path="/" element={<HomePage />} />

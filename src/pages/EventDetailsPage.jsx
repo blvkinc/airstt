@@ -404,8 +404,8 @@ const EventDetailsPage = () => {
 
   return (
     <div className="min-h-screen bg-white">
-      <div className="max-w-7xl mx-auto px-4 md:px-8 pt-24 pb-6">
-        <Link to="/events" className="inline-flex items-center space-x-2 text-gray-600 hover:text-gray-900 transition-colors"><ArrowLeft className="w-5 h-5" /><span className="font-medium">Back to Events</span></Link>
+      <div className="mx-auto max-w-7xl px-4 pb-5 pt-24 md:px-8">
+        <Link to="/events" className="inline-flex h-10 items-center gap-2 rounded-full px-1 text-sm font-semibold text-gray-700 transition hover:text-gray-950"><ArrowLeft className="h-4 w-4" /><span>Back to events</span></Link>
       </div>
       <EventGallery event={eventDetail} />
       <div className="max-w-7xl mx-auto px-4 md:px-8">
@@ -413,11 +413,11 @@ const EventDetailsPage = () => {
           <div className="lg:col-span-2">
             <EventHeader event={eventDetail} />
             <Tabs value={bookingIntent.activeTab} onValueChange={setActiveTab} className="pb-10">
-              <TabsList className="h-auto w-full flex-wrap justify-start gap-2 rounded-2xl bg-gray-50 p-2">
-                <TabsTrigger value="overview" className="rounded-xl px-4 py-2 data-[state=active]:bg-white">Overview</TabsTrigger>
-                <TabsTrigger value="availability" className="rounded-xl px-4 py-2 data-[state=active]:bg-white">Availability</TabsTrigger>
-                <TabsTrigger value="venue" className="rounded-xl px-4 py-2 data-[state=active]:bg-white">Venue</TabsTrigger>
-                <TabsTrigger value="packages" className="rounded-xl px-4 py-2 data-[state=active]:bg-white">Packages</TabsTrigger>
+              <TabsList className="h-auto w-full flex-wrap justify-start gap-1">
+                <TabsTrigger value="overview">Overview</TabsTrigger>
+                <TabsTrigger value="availability">Availability</TabsTrigger>
+                <TabsTrigger value="venue">Venue</TabsTrigger>
+                <TabsTrigger value="packages">Packages</TabsTrigger>
               </TabsList>
 
               <TabsContent value="overview" className="space-y-8">
