@@ -7,7 +7,7 @@ export function SettingsSection({ profileForm, updateProfileField, handleSavePro
     <Card className="border-0 shadow-sm">
       <CardContent className="p-8">
         <h2 className="mb-2 text-2xl font-semibold text-gray-900">Account Settings</h2>
-        <p className="mb-6 text-sm text-gray-500">This screen saves your name and phone number to the local demo profile.</p>
+        <p className="mb-6 text-sm text-gray-500">This screen saves your name and phone number to your profile.</p>
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
           <Input value={profileForm.firstName} onChange={(e) => updateProfileField('firstName', e.target.value)} placeholder="First name" />
           <Input value={profileForm.lastName} onChange={(e) => updateProfileField('lastName', e.target.value)} placeholder="Last name" />

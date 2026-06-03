@@ -1,13 +1,17 @@
-import React, { createContext, useContext, useEffect, useMemo, useState } from 'react'
+import React, { createContext, useContext, useEffect, useState } from 'react'
 import {
   clearStoredCustomerSession,
+  createCustomerAddressWithApi,
+  deleteCustomerAddressWithApi,
   fetchCurrentCustomerWithApi,
+  fetchCustomerProfileWithApi,
   getStoredCustomerToken,
   getStoredCustomerUser,
   loginCustomerWithApi,
   logoutCustomerWithApi,
   registerCustomerWithApi,
   resendCustomerVerificationWithApi,
+  updateCustomerAddressWithApi,
   updateCustomerProfileWithApi,
 } from '../lib/customerAuthApi'
 import { hasRequiredCustomerProfile } from '../lib/customerProfileCompletion'
@@ -82,28 +86,53 @@ export const AuthProvider = ({ children }) => {
     setUser(null)
   }
 
-  const updateUser = async ({ firstName, lastName, phone }) => {
-    const updatedUser = await updateCustomerProfileWithApi({ firstName, lastName, phone })
+  const refreshUserProfile = async () => {
+    const refreshedUser = await fetchCustomerProfileWithApi()
+    setUser(refreshedUser)
+    return refreshedUser
+  }
+
+  const updateUser = async (profileFields) => {
+    const updatedUser = await updateCustomerProfileWithApi(profileFields)
     setUser(updatedUser)
     return updatedUser
+  }
+
+  const createAddress = async (addressFields) => {
+    await createCustomerAddressWithApi(addressFields)
+    return refreshUserProfile()
+  }
+
+  const updateAddress = async (addressId, addressFields) => {
+    await updateCustomerAddressWithApi(addressId, addressFields)
+    return refreshUserProfile()
+  }
+
+  const deleteAddress = async (addressId) => {
+    await deleteCustomerAddressWithApi(addressId)
+    return refreshUserProfile()
   }
 
   const resendVerification = async () => resendCustomerVerificationWithApi()
 
   const upgradeToPremium = () => {}
 
-  const value = useMemo(() => ({
+  const value = {
     user,
     loading,
     login,
     register,
     logout,
     updateUser,
+    refreshUserProfile,
+    createAddress,
+    updateAddress,
+    deleteAddress,
     resendVerification,
     upgradeToPremium,
     isAuthenticated: !!user,
     requiresProfileCompletion: !!user && !hasRequiredCustomerProfile(user),
-  }), [loading, user])
+  }
 
   return (
     <AuthContext.Provider value={value}>

@@ -117,10 +117,10 @@ const OrderPaymentReturnPage = () => {
 
   const helperText = useMemo(() => {
     if (statusPayload?.state === 'processing') {
-      return 'This page checks the local demo payment status for a short window. You can also refresh it manually.'
+      return 'This page checks payment status for a short window. You can also refresh it manually.'
     }
 
-    return 'Payment redirects are skipped in this demo. This page reflects the local payment record.'
+    return 'This page reflects the latest payment record for your order.'
   }, [statusPayload])
 
   if (!isAuthenticated) {
@@ -146,7 +146,7 @@ const OrderPaymentReturnPage = () => {
 
           <div className="mt-6 space-y-2 text-sm text-gray-700">
             <div>Order: <span className="font-medium text-gray-900">{statusPayload?.order_number || orderId}</span></div>
-            <div>Demo state: <span className="font-medium capitalize text-gray-900">{resolvedState.replace(/_/g, ' ')}</span></div>
+            <div>Status: <span className="font-medium capitalize text-gray-900">{resolvedState.replace(/_/g, ' ')}</span></div>
             <div>Payment record: <span className="font-medium capitalize text-gray-900">{statusPayload?.payment_status || 'pending'}</span></div>
           </div>
 

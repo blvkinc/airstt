@@ -11,6 +11,26 @@ const normalizePublicEventAvailabilitySettings = (settings) => {
   }
 }
 
+const normalizePublicEventAvailabilityCapacity = (capacity) => {
+  if (!isPlainObject(capacity)) return null
+
+  return {
+    ...capacity,
+    capacity_limit: capacity.capacity_limit ?? null,
+    effective_capacity_limit: capacity.effective_capacity_limit ?? capacity.capacity_limit ?? null,
+    capacity_limit_mode: capacity.capacity_limit_mode ?? null,
+    capacity_source: capacity.capacity_source ?? null,
+    is_capped: capacity.is_capped ?? false,
+    committed_quantity: capacity.committed_quantity ?? 0,
+    active_hold_quantity: capacity.active_hold_quantity ?? 0,
+    allocated_quantity: capacity.allocated_quantity ?? 0,
+    remaining_quantity: capacity.remaining_quantity ?? null,
+    is_exhausted: capacity.is_exhausted ?? false,
+    decision_reason: capacity.decision_reason ?? null,
+    decision_reason_label: capacity.decision_reason_label ?? null,
+  }
+}
+
 const normalizePublicEventAvailabilityLifecycle = (lifecycle) => {
   if (!isPlainObject(lifecycle)) return null
 
@@ -18,6 +38,7 @@ const normalizePublicEventAvailabilityLifecycle = (lifecycle) => {
     ...lifecycle,
     effective_status: lifecycle.effective_status ?? null,
     is_bookable: lifecycle.is_bookable ?? null,
+    capacity: normalizePublicEventAvailabilityCapacity(lifecycle.capacity),
   }
 }
 
@@ -99,11 +120,14 @@ const normalizePublicEventAvailabilityEffective = (effective) => {
     winning_rule: isPlainObject(effective.winning_rule) ? { ...effective.winning_rule } : null,
     discount: isPlainObject(effective.discount) ? { ...effective.discount } : null,
     inventory_remaining: effective.inventory_remaining ?? null,
+    occurrence_capacity: normalizePublicEventAvailabilityCapacity(effective.occurrence_capacity),
     availability_status: effective.availability_status ?? null,
     availability_source: effective.availability_source ?? null,
     sales_cutoff_at: effective.sales_cutoff_at ?? null,
     sales_cutoff_source: effective.sales_cutoff_source ?? null,
     sales_closed: effective.sales_closed ?? null,
+    excluded_from_occurrence_capacity: effective.excluded_from_occurrence_capacity ?? false,
+    capacity_exemption_mode: effective.capacity_exemption_mode ?? null,
     decision_state: effective.decision_state ?? null,
     decision_reason: effective.decision_reason ?? null,
     is_applicable: effective.is_applicable ?? null,
@@ -135,6 +159,8 @@ const normalizePublicEventAvailabilityPackage = (pkg) => {
     display_name: pkg.display_name ?? null,
     name: pkg.name ?? null,
     audience_label: pkg.audience_label ?? null,
+    audience_mode: pkg.audience_mode ?? null,
+    audience_code: pkg.audience_code ?? null,
     compatibility_aliases: Array.isArray(pkg.compatibility_aliases) ? pkg.compatibility_aliases.filter(Boolean) : [],
     gender_config: isPlainObject(pkg.gender_config) ? { ...pkg.gender_config } : null,
     guest_count: pkg.guest_count ?? null,
@@ -143,6 +169,7 @@ const normalizePublicEventAvailabilityPackage = (pkg) => {
     payment_mode: pkg.payment_mode ?? null,
     deposit_type: pkg.deposit_type ?? null,
     deposit_value: pkg.deposit_value ?? null,
+    excluded_from_occurrence_capacity: pkg.excluded_from_occurrence_capacity ?? false,
     pricing_summary: normalizePublicEventAvailabilityPricingSummary(pkg.pricing_summary),
     eligibility: normalizePublicEventAvailabilityEligibility(pkg.eligibility),
     state: normalizePublicEventAvailabilityState(pkg.state),
@@ -179,9 +206,13 @@ export const normalizePublicEventOccurrenceAvailability = (occurrence) => {
     event_id: occurrence.event_id ?? null,
     starts_at: occurrence.starts_at ?? null,
     ends_at: occurrence.ends_at ?? null,
+    has_afterparty: occurrence.has_afterparty ?? false,
+    afterparty_starts_at: occurrence.afterparty_starts_at ?? null,
+    afterparty_ends_at: occurrence.afterparty_ends_at ?? null,
     occurrence_date: occurrence.occurrence_date ?? null,
     persisted_occurrence_id: occurrence.persisted_occurrence_id ?? occurrence.event_occurrence_id ?? occurrence.id ?? null,
     lifecycle: normalizePublicEventAvailabilityLifecycle(occurrence.lifecycle),
+    capacity: normalizePublicEventAvailabilityCapacity(occurrence.capacity ?? occurrence.lifecycle?.capacity),
     packages: Array.isArray(occurrence.packages)
       ? occurrence.packages.map(normalizePublicEventAvailabilityPackage).filter(Boolean)
       : [],

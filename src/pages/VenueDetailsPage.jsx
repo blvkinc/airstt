@@ -172,7 +172,7 @@ const VenueDetailsPage = () => {
               <div className="space-y-6">
                 <div>
                   <h2 className="text-2xl font-bold text-gray-950">Public events at {venue.name}</h2>
-                  <p className="mt-2 text-sm text-gray-600">Demo events linked to this venue use the same card shape as the homepage and listing pages.</p>
+                  <p className="mt-2 text-sm text-gray-600">Events linked to this venue use the same card shape as the homepage and listing pages.</p>
                 </div>
 
                 {upcomingEvents.length === 0 ? (
@@ -260,7 +260,7 @@ const VenueDetailsPage = () => {
                 <div className="mb-6">
                   <p className="text-sm font-semibold text-gray-600">Starting from</p>
                   <h2 className="mt-1 text-2xl font-bold text-gray-950">{venue.priceRange || 'On request'}</h2>
-                  <p className="mt-2 text-sm leading-6 text-gray-600">Send a demo enquiry for availability, guest count, and private event options.</p>
+                  <p className="mt-2 text-sm leading-6 text-gray-600">Send an enquiry for availability, guest count, and private event options.</p>
                 </div>
 
                 <div className="space-y-4">

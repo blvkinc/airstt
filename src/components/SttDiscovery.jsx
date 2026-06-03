@@ -9,23 +9,23 @@ const discoveryLinks = [
   { id: 'venues', label: 'Venues', icon: MapPin, to: '/venues' },
 ]
 
-const eventCategoryTiles = [
-  { label: 'Day Brunch', tab: 'events', icon: CalendarDays },
-  { label: 'Evening Brunch', tab: 'events', icon: CalendarDays },
-  { label: 'Pool Party', tab: 'events', icon: Sparkles },
-  { label: 'Ladies Night', tab: 'experiences', icon: Sparkles },
+const emptySearchSuggestions = []
+const dateTimeOptions = ['Today', 'This Weekend', 'Evening']
+const recentSearchStorageKey = 'stt.recentSearches'
+const maxRecentSearches = 6
+const fallbackLocationSuggestions = ['Dubai Harbour', 'Palm Jumeirah', 'Downtown Dubai', 'DIFC', 'Dubai Marina', 'Jumeirah']
+const fallbackEventCategoryTiles = [
+  { label: 'Events', tab: 'events', icon: CalendarDays },
+  { label: 'Experiences', tab: 'experiences', icon: Sparkles },
+  { label: 'Brunch', tab: 'events', icon: Utensils },
+  { label: 'Venues', tab: 'venues', icon: MapPin },
 ]
-
-const venueCategoryTiles = [
+const fallbackVenueCategoryTiles = [
   { label: 'Beach Club', tab: 'venues', icon: MapPin },
-  { label: 'Restaurant', tab: 'venues', icon: CalendarDays },
+  { label: 'Restaurant', tab: 'venues', icon: Utensils },
   { label: 'Rooftop', tab: 'venues', icon: Sparkles },
   { label: 'Fine Dining', tab: 'venues', icon: CalendarDays },
 ]
-
-const recentSearches = ['Secret Jungle Brunch', 'Dubai Harbour', 'Ladies Night']
-const suggestedLocations = ['Dubai Harbour', 'Palm Jumeirah', 'Downtown Dubai', 'DIFC']
-const dateTimeOptions = ['Today', 'This Weekend', 'Evening']
 const desktopDestinationSuggestions = [
   { title: 'Nearby', subtitle: "Find what's around you", icon: Navigation, tone: 'text-blue-500 bg-blue-50' },
   { title: 'Dubai Harbour', subtitle: 'Beach clubs, yachts, and waterfront brunches', icon: Building2, tone: 'text-brand-purple bg-brand-purple/10' },
@@ -45,6 +45,118 @@ const calendarWeekdays = ['M', 'T', 'W', 'T', 'F', 'S', 'S']
 
 const brandLogoFilter = {
   filter: 'brightness(0) saturate(100%) invert(59%) sepia(19%) saturate(761%) hue-rotate(238deg) brightness(88%) contrast(87%)',
+}
+
+const uniqueText = (values = [], limit = values.length) => {
+  const seen = new Set()
+  const output = []
+
+  values.forEach((value) => {
+    const text = String(value || '').trim()
+    const key = text.toLowerCase()
+    if (!text || seen.has(key)) return
+    seen.add(key)
+    output.push(text)
+  })
+
+  return output.slice(0, limit)
+}
+
+const getRecentSearchLabel = (payload = {}) => {
+  const primary = payload.keyword || payload.category || payload.location || payload.dateTime || payload.guests
+  const secondary = payload.location && payload.location !== primary ? payload.location : ''
+  return [primary, secondary].filter(Boolean).join(' in ')
+}
+
+const normalizeRecentSearchEntry = (entry) => {
+  if (typeof entry === 'string') {
+    const label = entry.trim()
+    return label ? { id: label.toLowerCase(), label, keyword: label, createdAt: 0 } : null
+  }
+
+  if (!entry || typeof entry !== 'object') return null
+
+  const payload = {
+    keyword: String(entry.keyword || '').trim(),
+    location: String(entry.location || '').trim(),
+    dateTime: String(entry.dateTime || '').trim(),
+    category: String(entry.category || '').trim(),
+    guests: String(entry.guests || '').trim(),
+    tab: String(entry.tab || '').trim(),
+  }
+  const label = String(entry.label || getRecentSearchLabel(payload)).trim()
+
+  if (!label) return null
+  return {
+    ...payload,
+    id: String(entry.id || label).toLowerCase(),
+    label,
+    createdAt: Number(entry.createdAt) || 0,
+  }
+}
+
+const readRecentSearches = () => {
+  if (typeof window === 'undefined') return []
+
+  try {
+    const parsed = JSON.parse(window.localStorage.getItem(recentSearchStorageKey) || '[]')
+    return Array.isArray(parsed) ? parsed.map(normalizeRecentSearchEntry).filter(Boolean).slice(0, maxRecentSearches) : []
+  } catch {
+    return []
+  }
+}
+
+const writeRecentSearches = (items) => {
+  if (typeof window === 'undefined') return items
+
+  try {
+    window.localStorage.setItem(recentSearchStorageKey, JSON.stringify(items.slice(0, maxRecentSearches)))
+  } catch {
+    // Private browsing and storage policies should not block searching.
+  }
+
+  return items
+}
+
+const rememberRecentSearch = (payload = {}) => {
+  const entry = normalizeRecentSearchEntry({
+    ...payload,
+    label: getRecentSearchLabel(payload),
+    createdAt: Date.now(),
+  })
+
+  if (!entry) return readRecentSearches()
+
+  const nextItems = [
+    entry,
+    ...readRecentSearches().filter((item) => item.id !== entry.id && item.label.toLowerCase() !== entry.label.toLowerCase()),
+  ].slice(0, maxRecentSearches)
+
+  return writeRecentSearches(nextItems)
+}
+
+const filterTextSuggestions = (values, query, limit = 6) => {
+  const normalized = uniqueText(values)
+  const needle = String(query || '').trim().toLowerCase()
+  const matches = needle ? normalized.filter((item) => item.toLowerCase().includes(needle)) : normalized
+  return matches.slice(0, limit)
+}
+
+const filterSuggestionItems = (items, query, limit = 6) => {
+  const needle = String(query || '').trim().toLowerCase()
+  const seen = new Set()
+  const matches = []
+
+  items.forEach((item) => {
+    const label = String(item?.label || '').trim()
+    const key = label.toLowerCase()
+    if (!label || seen.has(key)) return
+    if (needle && !key.includes(needle)) return
+    seen.add(key)
+    matches.push(item)
+  })
+
+  return matches.slice(0, limit)
 }
 
 const formatEventDay = (event) => {
@@ -126,17 +238,47 @@ const buildCalendarDays = (year, monthIndex) => {
   ]
 }
 
-function SearchField({ icon: Icon, placeholder, value, onChange }) {
+function SearchField({ icon: Icon, placeholder, value, onChange, onFocus, expanded = false, children }) {
   return (
-    <label className="flex h-12 w-full items-center gap-3 rounded-full bg-white px-4 text-gray-500 shadow-[0_2px_12px_rgba(15,23,42,0.12)] ring-1 ring-black/5">
-      <Icon className="h-5 w-5 shrink-0" strokeWidth={2} />
-      <input
-        value={value}
-        onChange={(event) => onChange(event.target.value)}
-        placeholder={placeholder}
-        className="w-0 min-w-0 flex-1 bg-transparent text-sm font-medium text-gray-900 outline-none placeholder:text-gray-400"
-      />
-    </label>
+    <div className="relative">
+      <label className="flex h-12 w-full items-center gap-3 rounded-full bg-white px-4 text-gray-500 shadow-[0_2px_12px_rgba(15,23,42,0.12)] ring-1 ring-black/5">
+        <Icon className="h-5 w-5 shrink-0" strokeWidth={2} />
+        <input
+          value={value}
+          onChange={(event) => onChange(event.target.value)}
+          onFocus={onFocus}
+          placeholder={placeholder}
+          autoComplete="off"
+          aria-expanded={expanded}
+          className="w-0 min-w-0 flex-1 bg-transparent text-sm font-medium text-gray-900 outline-none placeholder:text-gray-400"
+        />
+      </label>
+      {expanded && children}
+    </div>
+  )
+}
+
+function SuggestionDropdown({ items, emptyText, icon: Icon = Search, onSelect }) {
+  return (
+    <div className="absolute left-0 right-0 top-[54px] z-[80] overflow-hidden rounded-[18px] border border-gray-100 bg-white shadow-[0_14px_34px_rgba(15,23,42,0.16)]">
+      {items.length > 0 ? (
+        <div className="max-h-64 overflow-y-auto py-2">
+          {items.map((item) => (
+            <button key={item.value || item.label} type="button" onClick={() => onSelect(item)} className="flex w-full items-center gap-3 px-4 py-3 text-left transition hover:bg-gray-50">
+              <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-brand-purple/10 text-brand-purple">
+                <Icon className="h-4 w-4" strokeWidth={2} />
+              </span>
+              <span className="min-w-0">
+                <span className="block truncate text-sm font-bold text-gray-950">{item.label}</span>
+                {item.meta && <span className="mt-0.5 block truncate text-xs font-medium text-gray-500">{item.meta}</span>}
+              </span>
+            </button>
+          ))}
+        </div>
+      ) : (
+        <div className="px-4 py-3 text-sm font-medium text-gray-500">{emptyText}</div>
+      )}
+    </div>
   )
 }
 
@@ -150,12 +292,12 @@ function DesktopWherePanel({ onSelect }) {
 
           return (
             <button key={item.title} type="button" onClick={() => onSelect(item.title === 'Nearby' ? 'Dubai' : item.title)} className="flex w-full items-center gap-4 rounded-2xl text-left transition-colors hover:bg-gray-50">
-              <span className={`flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl ${item.tone}`}>
-                <Icon className="h-8 w-8" strokeWidth={1.65} />
+              <span className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl ${item.tone}`}>
+                <Icon className="h-6 w-6" strokeWidth={1.65} />
               </span>
               <span className="min-w-0">
-                <span className="block text-lg font-extrabold leading-tight text-gray-950">{item.title}</span>
-                <span className="mt-1 block truncate text-base font-medium text-gray-500">{item.subtitle}</span>
+                <span className="block text-sm font-extrabold leading-tight text-gray-950">{item.title}</span>
+                <span className="mt-1 block truncate text-xs font-medium text-gray-500">{item.subtitle}</span>
               </span>
             </button>
           )
@@ -288,6 +430,7 @@ export function SttDesktopSearchBar({ mode = 'events', searchTerm = '', onApplyS
   }, [])
 
   const applyDesktopSearch = (payload = {}) => {
+    rememberRecentSearch(payload)
     onApplySearch?.(payload)
     setActivePanel(null)
   }
@@ -378,35 +521,74 @@ export function SttCategoryLinks() {
   )
 }
 
-export function SttSearchOverlay({ open, mode = 'events', initialKeyword = '', onClose, onApplySearch }) {
+export function SttSearchOverlay({
+  open,
+  mode = 'events',
+  initialKeyword = '',
+  recentSearches = emptySearchSuggestions,
+  suggestedLocations = emptySearchSuggestions,
+  categoryTiles: categoryTileSuggestions,
+  onClose,
+  onApplySearch,
+}) {
   const [keyword, setKeyword] = useState(initialKeyword)
   const [location, setLocation] = useState('')
   const [dateTime, setDateTime] = useState('')
+  const [activeField, setActiveField] = useState(null)
+  const [storedRecentSearches, setStoredRecentSearches] = useState([])
   const isVenuesMode = mode === 'venues'
-  const categoryTiles = isVenuesMode ? venueCategoryTiles : eventCategoryTiles
+  const locationSuggestions = suggestedLocations.length > 0 ? suggestedLocations : fallbackLocationSuggestions
+  const categoryTiles = categoryTileSuggestions?.length
+    ? categoryTileSuggestions
+    : isVenuesMode
+      ? fallbackVenueCategoryTiles
+      : fallbackEventCategoryTiles
 
   useEffect(() => {
     if (!open) return
     setKeyword(initialKeyword || '')
+    setLocation('')
+    setDateTime('')
+    setActiveField(null)
+    setStoredRecentSearches(readRecentSearches())
   }, [initialKeyword, open])
 
   if (!open) return null
 
   const applySearch = (overrides = {}) => {
-    onApplySearch({
+    const payload = {
       keyword: overrides.keyword ?? keyword,
       location: overrides.location ?? location,
       dateTime: overrides.dateTime ?? dateTime,
       category: overrides.category,
       tab: overrides.tab,
-    })
+      guests: overrides.guests,
+    }
+
+    setActiveField(null)
+    setStoredRecentSearches(rememberRecentSearch(payload))
+    onApplySearch?.(payload)
   }
+
+  const clearRecentSearches = () => {
+    setStoredRecentSearches(writeRecentSearches([]))
+  }
+
+  const keywordSuggestionItems = filterSuggestionItems([
+    ...storedRecentSearches.map((item) => ({ label: item.label, meta: 'Recent search', payload: item })),
+    ...recentSearches.map((item) => ({ label: item, meta: 'Suggested search', payload: { keyword: item } })),
+    ...locationSuggestions.map((item) => ({ label: item, meta: 'Location', payload: { keyword: item, location: item } })),
+    ...categoryTiles.map((tile) => ({ label: tile.label, meta: 'Category', payload: { keyword: tile.label, category: tile.label, tab: tile.tab } })),
+  ], keyword, 6)
+  const locationSuggestionItems = filterTextSuggestions(locationSuggestions, location, 6).map((item) => ({ label: item, value: item, meta: 'Dubai' }))
+  const showKeywordSuggestions = activeField === 'keyword' && keyword.trim().length > 0
+  const showLocationSuggestions = activeField === 'location' && locationSuggestions.length > 0
 
   return (
     <div className="fixed inset-0 z-[70] overflow-x-hidden bg-white md:bg-gray-950/25 md:px-5 md:py-10" role="dialog" aria-modal="true" aria-label="Search">
       <div className="min-h-full w-full max-w-full overflow-x-hidden bg-white px-7 pb-10 pt-16 md:mx-auto md:min-h-0 md:max-w-[440px] md:rounded-[28px] md:px-8 md:shadow-[0_24px_70px_rgba(15,23,42,0.22)]">
         <div className="mb-5 flex items-center justify-between">
-          <h2 className="text-lg font-extrabold text-gray-950">Search</h2>
+          <h2 className="text-xl font-extrabold text-gray-950">Search</h2>
           <button type="button" onClick={onClose} aria-label="Close search" className="flex h-9 w-9 items-center justify-center rounded-full bg-gray-50 text-gray-600">
             <X className="h-4 w-4" strokeWidth={2} />
           </button>
@@ -419,40 +601,87 @@ export function SttSearchOverlay({ open, mode = 'events', initialKeyword = '', o
             applySearch()
           }}
         >
-          <SearchField icon={Search} placeholder={isVenuesMode ? 'Any venues or locations' : 'Any venues, experiences or events'} value={keyword} onChange={setKeyword} />
-          <SearchField icon={MapPin} placeholder="Location" value={location} onChange={setLocation} />
-          {!isVenuesMode && <SearchField icon={Clock} placeholder="Date & Time" value={dateTime} onChange={setDateTime} />}
+          <SearchField
+            icon={Search}
+            placeholder={isVenuesMode ? 'Any venues or locations' : 'Any venues, experiences or events'}
+            value={keyword}
+            onChange={(value) => {
+              setKeyword(value)
+              setActiveField('keyword')
+            }}
+            onFocus={() => setActiveField('keyword')}
+            expanded={showKeywordSuggestions}
+          >
+            <SuggestionDropdown
+              items={keywordSuggestionItems}
+              emptyText="No matching suggestions"
+              icon={Search}
+              onSelect={(item) => applySearch(item.payload || { keyword: item.label })}
+            />
+          </SearchField>
+          <SearchField
+            icon={MapPin}
+            placeholder="Location"
+            value={location}
+            onChange={(value) => {
+              setLocation(value)
+              setActiveField('location')
+            }}
+            onFocus={() => setActiveField('location')}
+            expanded={showLocationSuggestions}
+          >
+            <SuggestionDropdown
+              items={locationSuggestionItems}
+              emptyText="No matching locations"
+              icon={MapPin}
+              onSelect={(item) => {
+                setLocation(item.label)
+                setActiveField(null)
+              }}
+            />
+          </SearchField>
+          {!isVenuesMode && <SearchField icon={Clock} placeholder="Date & Time" value={dateTime} onChange={setDateTime} onFocus={() => setActiveField('dateTime')} />}
           <button type="submit" className="mt-2 h-11 w-full rounded-full bg-brand-purple text-sm font-extrabold text-white shadow-[0_4px_14px_rgba(15,23,42,0.14)]">
             Search
           </button>
         </form>
 
-        <section className="mt-8">
-          <h3 className="text-xl font-extrabold text-gray-950">Recent Searches</h3>
-          <div className="mt-4 space-y-4">
-            {recentSearches.map((item) => (
-              <button key={item} type="button" onClick={() => applySearch({ keyword: item })} className="flex w-full items-center gap-5 text-left">
-                <Search className="h-5 w-5 text-brand-purple" strokeWidth={2} />
-                <span className="text-base font-semibold text-gray-950">{item}</span>
-              </button>
-            ))}
-          </div>
-        </section>
+        {storedRecentSearches.length > 0 && (
+          <section className="mt-8">
+            <div className="flex items-center justify-between gap-3">
+              <h3 className="text-base font-extrabold text-gray-950">Recent Searches</h3>
+              <button type="button" onClick={clearRecentSearches} className="text-xs font-bold text-brand-purple">Clear</button>
+            </div>
+            <div className="mt-4 space-y-4">
+              {storedRecentSearches.map((item) => (
+                <button key={`${item.id}-${item.createdAt}`} type="button" onClick={() => applySearch(item)} className="flex w-full items-center gap-5 text-left">
+                  <Search className="h-5 w-5 text-brand-purple" strokeWidth={2} />
+                  <span className="min-w-0">
+                    <span className="block truncate text-sm font-semibold text-gray-950">{item.label}</span>
+                    {item.location && item.keyword !== item.location && <span className="mt-0.5 block truncate text-xs font-medium text-gray-500">{item.location}</span>}
+                  </span>
+                </button>
+              ))}
+            </div>
+          </section>
+        )}
 
-        <section className="mt-8">
-          <h3 className="text-xl font-extrabold text-gray-950">Suggested Locations</h3>
-          <div className="mt-4 flex flex-wrap gap-2">
-            {suggestedLocations.map((item) => (
-              <button key={item} type="button" onClick={() => applySearch({ location: item })} className="rounded-full border border-brand-purple/15 bg-brand-purple/5 px-3 py-2 text-xs font-bold text-gray-800 shadow-sm">
-                {item}
-              </button>
-            ))}
-          </div>
-        </section>
+        {locationSuggestions.length > 0 && (
+          <section className="mt-8">
+            <h3 className="text-base font-extrabold text-gray-950">Suggested Locations</h3>
+            <div className="mt-4 flex flex-wrap gap-2">
+              {locationSuggestions.map((item) => (
+                <button key={item} type="button" onClick={() => applySearch({ keyword: item, location: item })} className="rounded-full border border-brand-purple/15 bg-brand-purple/5 px-3 py-2 text-xs font-bold text-gray-800 shadow-sm">
+                  {item}
+                </button>
+              ))}
+            </div>
+          </section>
+        )}
 
         {!isVenuesMode && (
           <section className="mt-8">
-            <h3 className="text-xl font-extrabold text-gray-950">Date & Time</h3>
+            <h3 className="text-base font-extrabold text-gray-950">Date & Time</h3>
             <div className="mt-4 flex flex-wrap gap-2">
               {dateTimeOptions.map((item) => (
                 <button key={item} type="button" onClick={() => setDateTime(item)} className={`rounded-full px-3 py-2 text-xs font-bold shadow-sm ${dateTime === item ? 'bg-brand-purple text-white' : 'border border-gray-200 bg-white text-gray-700'}`}>
@@ -463,27 +692,36 @@ export function SttSearchOverlay({ open, mode = 'events', initialKeyword = '', o
           </section>
         )}
 
-        <section className="mt-8">
-          <h3 className="text-xl font-extrabold text-gray-950">{isVenuesMode ? 'Venue Categories' : 'Top Categories'}</h3>
-          <div className="mt-4 grid grid-cols-2 gap-3">
-            {categoryTiles.map((tile) => {
-              const Icon = tile.icon
+        {categoryTiles.length > 0 && (
+          <section className="mt-8">
+            <h3 className="text-base font-extrabold text-gray-950">{isVenuesMode ? 'Venue Categories' : 'Top Categories'}</h3>
+            <div className="mt-4 grid grid-cols-2 gap-3">
+              {categoryTiles.map((tile) => {
+                const Icon = tile.icon
 
-              return (
-                <button key={tile.label} type="button" onClick={() => applySearch({ category: tile.label, keyword: tile.label, tab: tile.tab })} className="flex h-[90px] flex-col items-center justify-center gap-2 rounded-[14px] bg-white text-center shadow-[0_2px_12px_rgba(15,23,42,0.11)] ring-1 ring-black/5">
-                  <Icon className="h-8 w-8 text-brand-purple" strokeWidth={1.8} />
-                  <span className="text-sm font-bold text-gray-950">{tile.label}</span>
-                </button>
-              )
-            })}
-          </div>
-        </section>
+                return (
+                  <button key={tile.label} type="button" onClick={() => applySearch({ category: tile.label, keyword: tile.label, tab: tile.tab })} className="flex h-[90px] flex-col items-center justify-center gap-2 rounded-[14px] bg-white text-center shadow-[0_2px_12px_rgba(15,23,42,0.11)] ring-1 ring-black/5">
+                    <Icon className="h-8 w-8 text-brand-purple" strokeWidth={1.8} />
+                    <span className="text-sm font-bold text-gray-950">{tile.label}</span>
+                  </button>
+                )
+              })}
+            </div>
+          </section>
+        )}
       </div>
     </div>
   )
 }
 
-export function SttPageHeader({ mode = 'events', searchTerm = '', onApplySearch }) {
+export function SttPageHeader({
+  mode = 'events',
+  searchTerm = '',
+  recentSearches,
+  suggestedLocations,
+  categoryTiles,
+  onApplySearch,
+}) {
   const [searchOpen, setSearchOpen] = useState(false)
   const routeLocation = useLocation()
   const navigate = useNavigate()
@@ -507,7 +745,16 @@ export function SttPageHeader({ mode = 'events', searchTerm = '', onApplySearch 
 
   return (
     <section className="mx-auto w-full max-w-[100vw] px-5 pt-5 md:max-w-6xl md:px-8 md:pt-7">
-      <SttSearchOverlay open={searchOpen} mode={mode} initialKeyword={searchTerm} onClose={closeSearch} onApplySearch={handleApplySearch} />
+      <SttSearchOverlay
+        open={searchOpen}
+        mode={mode}
+        initialKeyword={searchTerm}
+        recentSearches={recentSearches}
+        suggestedLocations={suggestedLocations}
+        categoryTiles={categoryTiles}
+        onClose={closeSearch}
+        onApplySearch={handleApplySearch}
+      />
 
       <div className="md:hidden">
         <div className="mb-4 flex items-center justify-between">
@@ -598,7 +845,11 @@ export function SttEventTile({ event, badge = 'Featured' }) {
     <Link to={`/events/${event.id}`} className="block min-w-0">
       <article className="group">
         <div className="relative aspect-[1.48] overflow-hidden rounded-[14px] bg-gray-100 shadow-[0_2px_10px_rgba(15,23,42,0.08)] ring-1 ring-black/[0.04] transition-shadow group-hover:shadow-[0_5px_18px_rgba(15,23,42,0.10)]">
-          <img src={event.image} alt={event.title} className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.03]" />
+          {event.image ? (
+            <img src={event.image} alt={event.title} className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.03]" />
+          ) : (
+            <div className="flex h-full w-full items-center justify-center bg-gray-100 text-[10px] font-semibold text-gray-400">No image</div>
+          )}
           <span className="absolute left-2 top-2 rounded-full bg-white px-2 py-1 text-[9px] font-semibold leading-none text-gray-950 shadow-sm">
             {badge}
           </span>
@@ -606,22 +857,28 @@ export function SttEventTile({ event, badge = 'Featured' }) {
             <Heart className="h-4 w-4 text-white" strokeWidth={2} />
           </button>
         </div>
-        <div className="flex min-h-[104px] flex-col pt-2">
+        <div className="flex min-h-[84px] flex-col pt-1.5">
           <div className="flex items-start justify-between gap-2">
-            <h3 className="line-clamp-2 min-h-[32px] text-[12px] font-semibold leading-tight text-gray-950 md:min-h-[38px] md:text-[13px]">{event.title}</h3>
+            <h3 className="line-clamp-2 text-[12px] font-semibold leading-tight text-gray-950 md:text-[13px]">{event.title}</h3>
             <div className="shrink-0 text-right">
-              <p className="text-[9px] font-semibold leading-none text-gray-950 md:text-[11px]">AED {event.price}</p>
-              <p className="text-[7px] uppercase leading-none text-gray-400 md:text-[8px]">from</p>
+              {event.price !== null && event.price !== undefined ? (
+                <>
+                  <p className="text-[9px] font-semibold leading-none text-gray-950 md:text-[11px]">AED {event.price}</p>
+                  <p className="text-[7px] uppercase leading-none text-gray-400 md:text-[8px]">from</p>
+                </>
+              ) : (
+                <p className="max-w-[58px] text-[9px] font-semibold leading-tight text-gray-950 md:text-[11px]">On request</p>
+              )}
             </div>
           </div>
-          <div className="mt-1.5 space-y-0.5">
+          <div className="mt-1 space-y-0.5">
             <p className="flex items-center gap-1 truncate text-[9px] font-medium text-gray-500 md:text-xs">
               <MapPin className="h-3 w-3 shrink-0 text-gray-400" strokeWidth={1.8} />
               <span className="truncate">{event.venue}</span>
             </p>
             <p className="truncate text-[9px] text-gray-400 md:text-xs">{getEventAddress(event)}</p>
           </div>
-          <div className="mt-auto flex min-h-[22px] flex-wrap gap-1.5 pt-2">
+          <div className="mt-auto flex min-h-[20px] flex-wrap gap-1.5 pt-1.5">
             <span className={`rounded-full px-2 py-1 text-[8px] font-semibold uppercase leading-none ring-1 md:text-[9px] ${getCategoryPillClassName(categoryLabel)}`}>{categoryLabel}</span>
             <span className={`rounded-full px-2 py-1 text-[8px] font-semibold uppercase leading-none ring-1 md:text-[9px] ${dayPillClassName}`}>{dayLabel}</span>
           </div>
@@ -638,19 +895,23 @@ export function SttVenueTile({ venue, badge = 'Featured' }) {
     <Link to={`/venues/${venue.id}`} className="block min-w-0">
       <article className="group">
         <div className="relative aspect-[1.22] overflow-hidden rounded-[14px] bg-gray-100 shadow-[0_2px_10px_rgba(15,23,42,0.08)] ring-1 ring-black/[0.04] transition-shadow group-hover:shadow-[0_5px_18px_rgba(15,23,42,0.10)]">
-          <img src={venue.image} alt={venue.name} className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.03]" />
+          {venue.image ? (
+            <img src={venue.image} alt={venue.name} className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.03]" />
+          ) : (
+            <div className="flex h-full w-full items-center justify-center bg-gray-100 text-[10px] font-semibold text-gray-400">No image</div>
+          )}
           <span className="absolute left-2 top-2 rounded-full bg-white px-2 py-1 text-[9px] font-semibold leading-none text-gray-950 shadow-sm">{badge}</span>
           <button type="button" aria-label="Save venue" className="absolute right-2 top-2 flex h-7 w-7 items-center justify-center rounded-full bg-black/25 text-white shadow-sm backdrop-blur-md">
             <Heart className="h-4 w-4 text-white" strokeWidth={2} />
           </button>
         </div>
-        <div className="flex min-h-[82px] flex-col pt-2">
-          <h3 className="line-clamp-2 min-h-[30px] text-[12px] font-semibold leading-tight text-gray-950 md:min-h-[34px] md:text-[13px]">{venue.name}</h3>
-          <div className="mt-1.5 flex min-h-[18px] items-center gap-1 truncate text-[9px] text-gray-500 md:text-xs">
+        <div className="flex min-h-[70px] flex-col pt-1.5">
+          <h3 className="line-clamp-2 text-[12px] font-semibold leading-tight text-gray-950 md:text-[13px]">{venue.name}</h3>
+          <div className="mt-1 flex min-h-[18px] items-center gap-1 truncate text-[9px] text-gray-500 md:text-xs">
             <MapPin className="h-3 w-3 shrink-0 text-gray-400" strokeWidth={1.8} />
             <span className="truncate">{venue.location || venue.address}</span>
           </div>
-          <div className="mt-auto flex pt-2">
+          <div className="mt-auto flex pt-1.5">
             <span className={`w-fit rounded-full px-2 py-1 text-[8px] font-semibold uppercase leading-none ring-1 md:text-[9px] ${getCategoryPillClassName(categoryLabel)}`}>{categoryLabel}</span>
           </div>
         </div>

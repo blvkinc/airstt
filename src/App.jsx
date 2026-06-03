@@ -3,7 +3,6 @@ import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-route
 import { AuthProvider } from './shared/context/AuthContext'
 import { BookingProvider } from './shared/context/BookingContext'
 import { CartProvider } from './shared/context/CartContext'
-import { favoriteFixtures } from './features/profile/profileFixtures'
 import RequireAuth from './shared/components/RequireAuth'
 import Navbar from './components/Navbar'
 import Footer from './components/Footer'
@@ -87,7 +86,7 @@ function AppShell() {
 function App() {
   return (
     <AuthProvider>
-      <BookingProvider initialFavorites={favoriteFixtures}>
+      <BookingProvider>
         <CartProvider>
           <Router>
             <AppErrorBoundary>

@@ -8,7 +8,16 @@ export default defineConfig({
     host: '::',  // IPv6 - allows both IPv4 and IPv6 connections
     port: 8080,  // Builder.io default port
     // Completely disable auto-open to prevent xdg-open errors
-    open: false
+    open: false,
+    // Dev-only proxy: forwards same-origin /api requests to the backend
+    // server-side, sidestepping browser CORS on the production API.
+    proxy: {
+      '/api': {
+        target: 'https://stt-api.d3maven.com',
+        changeOrigin: true,
+        secure: true
+      }
+    }
   },
   build: {
     // Builder.io expects output in dist/spa

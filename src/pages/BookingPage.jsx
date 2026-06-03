@@ -15,7 +15,7 @@ const BookingPage = () => {
     <div className="min-h-screen bg-gray-50/50">
       <div className="max-w-3xl mx-auto px-4 md:px-8 pt-24 pb-12 text-center">
         <h1 className="text-3xl font-bold text-gray-900 mb-3">Checkout now starts from your cart</h1>
-        <p className="text-gray-600 mb-6">This direct booking route now points shoppers back to the cart-based demo checkout flow.</p>
+        <p className="text-gray-600 mb-6">This direct booking route now points shoppers back to the cart-based checkout flow.</p>
         <div className="flex flex-col sm:flex-row justify-center gap-3">
           <Link to={`/events/${id}?tab=packages`} className="inline-flex items-center justify-center rounded-xl bg-gray-900 px-5 py-3 font-semibold text-white">
             <ArrowLeft className="w-4 h-4 mr-2" /> Return to event

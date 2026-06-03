@@ -9,7 +9,7 @@ export function ReceiptsSection({ receipts }) {
       <CardContent className="p-8">
         <h2 className="mb-6 text-2xl font-semibold text-gray-900">Receipts & E-tickets</h2>
         <div className="space-y-4">
-          {receipts.length === 0 && <div className="text-sm text-gray-500">Receipts will appear here when demo bookings include generated receipt files.</div>}
+          {receipts.length === 0 && <div className="text-sm text-gray-500">Receipts will appear here when bookings include generated receipt files.</div>}
           {receipts.map((receipt) => (
             <Card key={receipt.id} className="border-0 shadow-sm">
               <CardContent className="flex flex-col gap-4 p-6 md:flex-row md:items-center md:justify-between">

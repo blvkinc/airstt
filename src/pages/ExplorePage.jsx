@@ -183,13 +183,13 @@ export default function ExplorePage() {
           <div className="mb-6 overflow-hidden rounded-[18px] bg-gray-100 shadow-[0_2px_14px_rgba(15,23,42,0.10)] ring-1 ring-black/[0.05]">
             <div className="flex h-56 items-center justify-center bg-[url('https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?w=1400&h=600&fit=crop')] bg-cover bg-center">
               <div className="rounded-full bg-white/90 px-4 py-2 text-xs font-extrabold text-gray-700 shadow-sm backdrop-blur-md">
-                Demo map view: select Events, Experiences, or Venues from the page links above
+                Map view: select Events, Experiences, or Venues from the page links above
               </div>
             </div>
           </div>
         )}
 
-        {loading && <div className="rounded-[18px] bg-gray-50 p-10 text-center text-sm font-semibold text-gray-500 ring-1 ring-black/5">Loading demo catalog...</div>}
+        {loading && <div className="rounded-[18px] bg-gray-50 p-10 text-center text-sm font-semibold text-gray-500 ring-1 ring-black/5">Loading catalog...</div>}
         {error && !loading && (
           <div className="rounded-[18px] bg-gray-50 p-10 text-center ring-1 ring-black/5">
             <p className="text-sm text-gray-500">{error.message}</p>

@@ -6,5 +6,7 @@ export {
   getCatalogOccurrenceDetail,
   listCatalogEvents,
 } from './eventsCatalogService'
+export { getCatalogEventConcept, getCatalogEventConceptOptions } from './eventConceptsCatalogService'
+export { getCatalogEventFilterSchema } from './eventsCatalogService'
 export { listCatalogEventCategories } from './categoryCatalogService'
-export { getCatalogVenueDetail, listCatalogVenueTypes, listCatalogVenues } from './venuesCatalogService'
+export { getCatalogVenueDetail, getCatalogVenueFilterSchema, listCatalogVenueTypes, listCatalogVenues } from './venuesCatalogService'

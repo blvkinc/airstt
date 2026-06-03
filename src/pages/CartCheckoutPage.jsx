@@ -94,8 +94,8 @@ const CartCheckoutPage = () => {
                   <div className="bg-gray-50 p-4 rounded-xl border border-gray-100 mb-6 flex items-start gap-3">
                     <Shield strokeWidth={1.5} className="w-5 h-5 text-green-600 mt-0.5" />
                     <div>
-                      <h4 className="text-sm font-semibold text-gray-900">Demo checkout</h4>
-                      <p className="text-xs text-gray-500 mt-0.5">Submitting creates a local demo order from your cart. Payment screens are skipped so the team can focus on the booking UI.</p>
+                      <h4 className="text-sm font-semibold text-gray-900">Secure checkout</h4>
+                      <p className="text-xs text-gray-500 mt-0.5">Submitting creates an order from your current cart and opens payment when online payment is required.</p>
                     </div>
                   </div>
 
@@ -144,7 +144,7 @@ const CartCheckoutPage = () => {
                         <span className="font-medium">AED {summary.offlineDueAmount || 0}</span>
                       </div>
                     )}
-                    <div className="text-xs text-gray-500">Totals are calculated from local demo cart data.</div>
+                    <div className="text-xs text-gray-500">Totals are calculated from your current cart.</div>
                   </div>
                 </div>
                 <div className="bg-gray-50 p-4 text-center">

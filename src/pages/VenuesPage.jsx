@@ -2,10 +2,24 @@ import { useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { Building, MapPin, SlidersHorizontal } from 'lucide-react'
 import { useVenueTypesCatalog, useVenuesCatalog } from '../features/catalog'
-import { topVenueLocations } from '../features/experiences/data'
 import { SttPageHeader, SttRail, SttRailItem, SttSectionHeader, SttVenueTile } from '../components/SttDiscovery'
 
 const getVenueTypeLabel = (venueType) => venueType?.displayName || venueType?.name || venueType?.label || String(venueType || '')
+
+const uniqueText = (values, limit) => {
+  const seen = new Set()
+  const output = []
+
+  values.forEach((value) => {
+    const text = String(value || '').trim()
+    const key = text.toLowerCase()
+    if (!text || seen.has(key)) return
+    seen.add(key)
+    output.push(text)
+  })
+
+  return output.slice(0, limit)
+}
 
 const venueMatchesTerms = (venue, terms) => {
   const text = [
@@ -19,6 +33,32 @@ const venueMatchesTerms = (venue, terms) => {
   ].join(' ').toLowerCase()
 
   return terms.some((term) => text.includes(term))
+}
+
+const getVenueLocationName = (venue) => {
+  const value = venue?.area || venue?.location || venue?.address || venue?.city || venue?.category
+  const name = String(value || '').split(',')[0]?.trim()
+  return name || null
+}
+
+const buildTopVenueLocations = (venues) => {
+  const locations = new Map()
+
+  venues.forEach((venue) => {
+    const name = getVenueLocationName(venue)
+    if (!name) return
+
+    const existing = locations.get(name) || { name, image: null, venues: 0 }
+    locations.set(name, {
+      ...existing,
+      image: existing.image || venue.image || null,
+      venues: existing.venues + 1,
+    })
+  })
+
+  return Array.from(locations.values())
+    .sort((left, right) => right.venues - left.venues || left.name.localeCompare(right.name))
+    .slice(0, 5)
 }
 
 const VenuesPage = () => {
@@ -37,6 +77,17 @@ const VenuesPage = () => {
   const beachVenues = useMemo(() => venues.filter((venue) => venueMatchesTerms(venue, ['beach', 'pool', 'club'])), [venues])
   const rooftopVenues = useMemo(() => venues.filter((venue) => venueMatchesTerms(venue, ['roof', 'lounge', 'sky'])), [venues])
   const restaurantVenues = useMemo(() => venues.filter((venue) => venueMatchesTerms(venue, ['restaurant', 'dining', 'fine'])), [venues])
+  const topVenueLocations = useMemo(() => buildTopVenueLocations(venues), [venues])
+  const headerRecentSearches = useMemo(() => uniqueText([
+    ...venues.map((venue) => venue.name),
+    ...venues.map((venue) => venue.location),
+  ], 3), [venues])
+  const headerSuggestedLocations = useMemo(() => uniqueText(venues.map((venue) => venue.area || venue.location || venue.address || venue.city), 4), [venues])
+  const headerCategoryTiles = useMemo(() => venueTypes
+    .map(getVenueTypeLabel)
+    .filter(Boolean)
+    .slice(0, 4)
+    .map((label) => ({ label, tab: 'venues', icon: MapPin })), [venueTypes])
 
   const renderVenueRail = (items, badge = 'Featured') => items.map((venue) => (
     <SttRailItem key={venue.id} variant="venue">
@@ -62,7 +113,14 @@ const VenuesPage = () => {
 
   return (
     <div className="min-h-screen bg-white pb-20 text-gray-950 md:pb-0">
-      <SttPageHeader mode="venues" searchTerm={searchTerm} onApplySearch={handleApplySearch} />
+      <SttPageHeader
+        mode="venues"
+        searchTerm={searchTerm}
+        recentSearches={headerRecentSearches}
+        suggestedLocations={headerSuggestedLocations}
+        categoryTiles={headerCategoryTiles}
+        onApplySearch={handleApplySearch}
+      />
 
       <main className="mx-auto mt-8 w-full max-w-6xl px-5 md:mt-11 md:px-8">
         <div className="mb-6 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
@@ -104,7 +162,7 @@ const VenuesPage = () => {
           </div>
         )}
 
-        {(loading || venueTypesLoading) && <div className="rounded-[18px] bg-gray-50 p-10 text-center text-sm font-semibold text-gray-500 ring-1 ring-black/5">Loading demo venue catalog...</div>}
+        {(loading || venueTypesLoading) && <div className="rounded-[18px] bg-gray-50 p-10 text-center text-sm font-semibold text-gray-500 ring-1 ring-black/5">Loading venue catalog...</div>}
         {error && !loading && !venueTypesLoading && (
           <div className="rounded-[18px] bg-gray-50 p-10 text-center ring-1 ring-black/5">
             <h2 className="text-xl font-extrabold text-gray-950">Couldn't load venues</h2>
@@ -145,28 +203,34 @@ const VenuesPage = () => {
           </div>
         )}
 
-        <section className="mt-12">
-          <SttSectionHeader title="Popular Locations" />
-          <div className="no-scrollbar -mx-5 flex w-screen max-w-[100vw] snap-x snap-mandatory gap-3 overflow-x-auto overscroll-x-contain px-5 pb-4 scroll-px-5 md:mx-0 md:grid md:w-full md:max-w-full md:grid-cols-5 md:gap-5 md:overflow-visible md:px-0 md:pb-0 md:scroll-px-0">
-            {topVenueLocations.map((location) => (
-              <Link key={location.name} to={`/explore?tab=venues&location=${encodeURIComponent(location.name)}`} className="block w-[154px] shrink-0 snap-start md:w-full md:min-w-0">
-                <div className="aspect-[1.22] overflow-hidden rounded-[14px] bg-gray-100 shadow-[0_2px_10px_rgba(15,23,42,0.08)] ring-1 ring-black/[0.04]">
-                  <img src={location.image} alt={location.name} className="h-full w-full object-cover" />
-                </div>
-                <div className="flex min-h-[82px] flex-col pt-2">
-                  <h3 className="text-sm font-semibold text-gray-950">{location.name}</h3>
-                  <p className="mt-1.5 flex items-center gap-1 text-xs text-gray-500">
-                    <MapPin className="h-3 w-3" strokeWidth={1.8} />
-                    {location.venues} venues
-                  </p>
-                  <div className="mt-auto flex pt-2">
-                    <span className="w-fit rounded-full bg-emerald-50 px-2 py-1 text-[9px] font-semibold uppercase leading-none text-emerald-700 ring-1 ring-emerald-100">Location</span>
+        {topVenueLocations.length > 0 && (
+          <section className="mt-12">
+            <SttSectionHeader title="Popular Locations" />
+            <div className="no-scrollbar -mx-5 flex w-screen max-w-[100vw] snap-x snap-mandatory gap-3 overflow-x-auto overscroll-x-contain px-5 pb-4 scroll-px-5 md:mx-0 md:grid md:w-full md:max-w-full md:grid-cols-5 md:gap-5 md:overflow-visible md:px-0 md:pb-0 md:scroll-px-0">
+              {topVenueLocations.map((location) => (
+                <Link key={location.name} to={`/explore?tab=venues&location=${encodeURIComponent(location.name)}`} className="block w-[154px] shrink-0 snap-start md:w-full md:min-w-0">
+                  <div className="aspect-[1.22] overflow-hidden rounded-[14px] bg-gray-100 shadow-[0_2px_10px_rgba(15,23,42,0.08)] ring-1 ring-black/[0.04]">
+                    {location.image ? (
+                      <img src={location.image} alt={location.name} className="h-full w-full object-cover" />
+                    ) : (
+                      <div className="flex h-full w-full items-center justify-center bg-gray-100 text-[10px] font-semibold text-gray-400">No image</div>
+                    )}
                   </div>
-                </div>
-              </Link>
-            ))}
-          </div>
-        </section>
+                  <div className="flex min-h-[70px] flex-col pt-1.5">
+                    <h3 className="line-clamp-2 text-[12px] font-semibold leading-tight text-gray-950 md:text-[13px]">{location.name}</h3>
+                    <p className="mt-1 flex items-center gap-1 text-[9px] text-gray-500 md:text-xs">
+                      <MapPin className="h-3 w-3 shrink-0 text-gray-400" strokeWidth={1.8} />
+                      {location.venues} venues
+                    </p>
+                    <div className="mt-auto flex pt-1.5">
+                      <span className="w-fit rounded-full bg-emerald-50 px-2 py-1 text-[8px] font-semibold uppercase leading-none text-emerald-700 ring-1 ring-emerald-100 md:text-[9px]">Location</span>
+                    </div>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          </section>
+        )}
 
         <section className="mt-12 rounded-[18px] bg-gray-50 p-5 ring-1 ring-black/[0.04] md:p-7">
           <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">

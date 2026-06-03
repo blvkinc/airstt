@@ -11,6 +11,9 @@ import {
 const CartContext = createContext()
 
 const EMPTY_CART_SUMMARY = {
+  grossLineTotal: 0,
+  cartEntitlementAdjustmentAmount: 0,
+  cartEntitlementAdjustments: [],
   lineTotal: 0,
   onlineDueAmount: 0,
   offlineDueAmount: 0,
@@ -22,22 +25,6 @@ const EMPTY_CART_SUMMARY = {
 const toNumber = (value) => {
   const numeric = Number(value)
   return Number.isFinite(numeric) ? numeric : 0
-}
-
-const buildCartSummaryFromItems = (cartItems = []) => {
-  const currency = cartItems.find((item) => item?.currency)?.currency || EMPTY_CART_SUMMARY.currency
-
-  return cartItems.reduce((nextSummary, item) => ({
-    ...nextSummary,
-    lineTotal: nextSummary.lineTotal + toNumber(item?.lineTotal),
-    onlineDueAmount: nextSummary.onlineDueAmount + toNumber(item?.onlineDueAmount),
-    offlineDueAmount: nextSummary.offlineDueAmount + toNumber(item?.offlineDueAmount),
-    remainingBalanceAmount: nextSummary.remainingBalanceAmount + toNumber(item?.remainingBalanceAmount),
-    itemCount: nextSummary.itemCount + 1,
-  }), {
-    ...EMPTY_CART_SUMMARY,
-    currency,
-  })
 }
 
 export const useCart = () => {
@@ -110,11 +97,8 @@ export const CartProvider = ({ children }) => {
     setPendingQuantityByItemId((current) => ({ ...current, [id]: true }))
 
     try {
-      const nextItem = await updateCustomerCartItem({ cartItemId: id, quantity: normalizedQuantity })
-      const mergedItems = items.map((item) => (item.id === id ? { ...item, ...nextItem } : item))
-
-      setItems(mergedItems)
-      setSummary(buildCartSummaryFromItems(mergedItems))
+      await updateCustomerCartItem({ cartItemId: id, quantity: normalizedQuantity })
+      await loadCart()
       setError('')
     } catch (nextError) {
       setError(nextError?.message || 'Unable to update quantity right now.')
@@ -126,7 +110,7 @@ export const CartProvider = ({ children }) => {
         return nextPendingState
       })
     }
-  }, [items])
+  }, [loadCart])
 
   const clearCart = useCallback(async () => {
     await clearCustomerCartApi()
@@ -135,7 +119,10 @@ export const CartProvider = ({ children }) => {
     setError('')
   }, [])
 
-  const itemCount = useMemo(() => summary.itemCount || items.length, [items.length, summary.itemCount])
+  const itemCount = useMemo(
+    () => summary.itemCount || items.reduce((count, item) => count + Math.max(1, toNumber(item?.quantity)), 0),
+    [items, summary.itemCount]
+  )
   const total = useMemo(() => summary.lineTotal || 0, [summary.lineTotal])
 
   return (

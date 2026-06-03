@@ -1,11 +1,26 @@
 import { useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { SlidersHorizontal } from 'lucide-react'
+import { CalendarDays, SlidersHorizontal } from 'lucide-react'
 import { useEventCategoriesCatalog, useEventsCatalog } from '../features/catalog'
 import { matchesSelectedEventCategory, normalizeSelectedEventCategory } from '../features/catalog/utils/eventCategorySelection'
 import { SttEventTile, SttPageHeader, SttRail, SttRailItem } from '../components/SttDiscovery'
 
 const getCategoryLabel = (category) => category?.displayName || category?.name || category?.label || String(category || '')
+
+const uniqueText = (values, limit) => {
+  const seen = new Set()
+  const output = []
+
+  values.forEach((value) => {
+    const text = String(value || '').trim()
+    const key = text.toLowerCase()
+    if (!text || seen.has(key)) return
+    seen.add(key)
+    output.push(text)
+  })
+
+  return output.slice(0, limit)
+}
 
 const eventMatchesTerms = (event, terms) => {
   const text = [
@@ -36,6 +51,16 @@ const EventsPage = () => {
   const nightlifeEvents = useMemo(() => filteredEvents.filter((event) => eventMatchesTerms(event, ['night', 'evening', 'party', 'dj'])), [filteredEvents])
   const poolEvents = useMemo(() => filteredEvents.filter((event) => eventMatchesTerms(event, ['pool', 'beach', 'club'])), [filteredEvents])
   const hasActiveFilter = Boolean(searchTerm || selectedCategory)
+  const headerRecentSearches = useMemo(() => uniqueText([
+    ...events.map((event) => event.title),
+    ...events.map((event) => event.venue),
+  ], 3), [events])
+  const headerSuggestedLocations = useMemo(() => uniqueText(events.map((event) => event.venueDetails?.area || event.location || event.venue), 4), [events])
+  const headerCategoryTiles = useMemo(() => eventCategories
+    .map(getCategoryLabel)
+    .filter(Boolean)
+    .slice(0, 4)
+    .map((label) => ({ label, tab: 'events', icon: CalendarDays })), [eventCategories])
 
   const renderEventRail = (items, badge = 'Featured') => items.map((event) => (
     <SttRailItem key={event.id}>
@@ -59,7 +84,14 @@ const EventsPage = () => {
 
   return (
     <div className="min-h-screen bg-white pb-20 text-gray-950 md:pb-0">
-      <SttPageHeader mode="events" searchTerm={searchTerm} onApplySearch={handleApplySearch} />
+      <SttPageHeader
+        mode="events"
+        searchTerm={searchTerm}
+        recentSearches={headerRecentSearches}
+        suggestedLocations={headerSuggestedLocations}
+        categoryTiles={headerCategoryTiles}
+        onApplySearch={handleApplySearch}
+      />
 
       <main className="mx-auto mt-8 w-full max-w-6xl px-5 md:mt-11 md:px-8">
         <div className="mb-6 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
@@ -95,7 +127,7 @@ const EventsPage = () => {
           </div>
         )}
 
-        {loading && <div className="rounded-[18px] bg-gray-50 p-10 text-center text-sm font-semibold text-gray-500 ring-1 ring-black/5">Loading demo event catalog...</div>}
+        {loading && <div className="rounded-[18px] bg-gray-50 p-10 text-center text-sm font-semibold text-gray-500 ring-1 ring-black/5">Loading event catalog...</div>}
         {error && !loading && (
           <div className="rounded-[18px] bg-gray-50 p-10 text-center ring-1 ring-black/5">
             <h2 className="text-xl font-extrabold text-gray-950">Couldn't load events</h2>

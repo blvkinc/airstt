@@ -104,6 +104,8 @@ const normalizePublicEventPackage = (pkg) => {
     display_name: pkg.display_name ?? null,
     name: pkg.name ?? null,
     audience_label: pkg.audience_label ?? null,
+    audience_mode: pkg.audience_mode ?? null,
+    audience_code: pkg.audience_code ?? null,
     compatibility_aliases: Array.isArray(pkg.compatibility_aliases) ? pkg.compatibility_aliases.filter(Boolean) : [],
     gender_config: isPlainObject(pkg.gender_config) ? { ...pkg.gender_config } : null,
     guest_count: pkg.guest_count ?? null,
@@ -143,6 +145,9 @@ const normalizePublicEventOccurrenceShell = (occurrence) => {
     id: occurrence.id ?? null,
     starts_at: occurrence.starts_at ?? null,
     ends_at: occurrence.ends_at ?? null,
+    has_afterparty: occurrence.has_afterparty ?? false,
+    afterparty_starts_at: occurrence.afterparty_starts_at ?? null,
+    afterparty_ends_at: occurrence.afterparty_ends_at ?? null,
     occurrence_date: occurrence.occurrence_date ?? null,
     status: occurrence.status ?? null,
     is_blackout: occurrence.is_blackout ?? null,
@@ -169,8 +174,41 @@ const normalizePublicEventVenue = (venue) => {
           ...venue.area,
           id: venue.area.id ?? null,
           name: venue.area.name ?? null,
+          city: isPlainObject(venue.area.city)
+            ? {
+                ...venue.area.city,
+                id: venue.area.city.id ?? null,
+                name: venue.area.city.name ?? null,
+              }
+            : null,
         }
       : null,
+    location: isPlainObject(venue.location)
+      ? {
+          ...venue.location,
+          label: venue.location.label ?? null,
+          address_line_1: venue.location.address_line_1 ?? null,
+          address_line_2: venue.location.address_line_2 ?? null,
+          locality: venue.location.locality ?? null,
+          region: venue.location.region ?? null,
+          postal_code: venue.location.postal_code ?? null,
+          country_code: venue.location.country_code ?? null,
+          latitude: venue.location.latitude ?? null,
+          longitude: venue.location.longitude ?? null,
+          formatted_address: venue.location.formatted_address ?? null,
+          map_links: isPlainObject(venue.location.map_links) ? { ...venue.location.map_links } : null,
+        }
+      : null,
+    venue_types: Array.isArray(venue.venue_types)
+      ? venue.venue_types.map((venueType) => (isPlainObject(venueType)
+        ? {
+            ...venueType,
+            id: venueType.id ?? null,
+            name: venueType.name ?? null,
+            slug: venueType.slug ?? null,
+          }
+        : null)).filter(Boolean)
+      : [],
   }
 }
 
@@ -181,6 +219,35 @@ const normalizePublicEventMeta = (meta) => {
     ...meta,
     title: meta.title ?? null,
     description: meta.description ?? null,
+  }
+}
+
+const normalizePublicEventVariantOption = (option) => {
+  if (!isPlainObject(option)) return null
+
+  return {
+    ...option,
+    id: option.id ?? option.event_variant_id ?? null,
+    event_variant_id: option.event_variant_id ?? option.eventVariantId ?? option.id ?? null,
+    key: option.key ?? null,
+    label: option.label ?? option.title ?? null,
+    href: option.href ?? null,
+    is_active: option.is_active ?? option.isActive ?? false,
+    is_disabled: option.is_disabled ?? option.isDisabled ?? false,
+  }
+}
+
+const normalizePublicEventConceptSummary = (concept) => {
+  if (!isPlainObject(concept)) return null
+
+  return {
+    ...concept,
+    id: concept.id ?? null,
+    title: concept.title ?? null,
+    slug: concept.slug ?? null,
+    default_event_id: concept.default_event_id ?? null,
+    canonical_event_id: concept.canonical_event_id ?? null,
+    links: isPlainObject(concept.links) ? { ...concept.links } : null,
   }
 }
 
@@ -271,6 +338,17 @@ export const normalizePublicEvent = (event) => {
   return {
     ...event,
     id: event.id ?? null,
+    public_event_id: event.public_event_id ?? null,
+    event_card_type: event.event_card_type ?? null,
+    representative_event_variant_id: event.representative_event_variant_id ?? null,
+    default_event_variant_id: event.default_event_variant_id ?? null,
+    canonical_event_variant_id: event.canonical_event_variant_id ?? null,
+    active_event_variant_id: event.active_event_variant_id ?? null,
+    has_variants: event.has_variants ?? null,
+    event_variant_count: event.event_variant_count ?? null,
+    event_variants: Array.isArray(event.event_variants)
+      ? event.event_variants.map(normalizePublicEventVariantOption).filter(Boolean)
+      : [],
     venue_id: event.venue_id ?? null,
     title: event.title ?? null,
     slug: event.slug ?? null,
@@ -306,6 +384,14 @@ export const normalizePublicEvent = (event) => {
     venue: normalizePublicEventVenue(event.venue),
     availability_summary: normalizePublicEventAvailabilitySummary(event.availability_summary),
     recurrence_rule: normalizePublicEventRecurrenceRule(event.recurrence_rule),
+    event_concept_id: event.event_concept_id ?? null,
+    concept_variant_key: event.concept_variant_key ?? null,
+    concept_variant_label: event.concept_variant_label ?? null,
+    concept_variant_subtitle: event.concept_variant_subtitle ?? null,
+    concept_variant_description: event.concept_variant_description ?? null,
+    concept_sort_order: event.concept_sort_order ?? null,
+    is_default_concept_variant: Boolean(event.is_default_concept_variant),
+    event_concept: normalizePublicEventConceptSummary(event.event_concept),
     meta: normalizePublicEventMeta(event.meta),
   }
 }
