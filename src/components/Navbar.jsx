@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
-import { Calendar, CalendarDays, Heart, Home as HomeIcon, Menu, Search as SearchIcon, User, X } from 'lucide-react'
+import { Calendar, CalendarDays, Heart, Home as HomeIcon, Search as SearchIcon, User } from 'lucide-react'
 import { motion } from 'framer-motion'
 import { useAuth } from '../shared/context/AuthContext'
 import { cn } from '../shared/lib/utils'
@@ -29,7 +29,6 @@ const buildExploreHref = ({ keyword = '', location = '', category = '', dateTime
 
 const Navbar = () => {
   const [searchOpen, setSearchOpen] = useState(false)
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const location = useLocation()
   const navigate = useNavigate()
   const { isAuthenticated } = useAuth()
@@ -95,7 +94,7 @@ const Navbar = () => {
             <img src={sttLogo} alt="Set The Table" className="h-12 w-auto object-contain" style={brandLogoFilter} />
           </Link>
 
-          <SttDesktopSearchBar mode="condensed" compact onApplySearch={handleApplySearch} />
+          <SttDesktopSearchBar mode="condensed" compact onApplySearch={handleApplySearch} onOpenSearch={() => setSearchOpen(true)} />
 
           <div className="flex items-center justify-end gap-5 text-brand-purple">
             <Link to="/venues" className="text-[11px] font-extrabold uppercase tracking-[0.32em] text-gray-700">List a Venue</Link>
@@ -108,9 +107,6 @@ const Navbar = () => {
             <Link to={profileHref} aria-label="Profile" className="flex h-10 w-10 items-center justify-center rounded-full border border-brand-purple/45 text-xs font-bold">
               <User className="h-4 w-4" strokeWidth={1.8} />
             </Link>
-            <button type="button" aria-label="Open menu" onClick={() => setMobileMenuOpen(true)} className="flex h-10 w-10 items-center justify-center rounded-full bg-gray-100 text-gray-800">
-              <Menu className="h-5 w-5" strokeWidth={1.8} />
-            </button>
           </div>
         </div>
 
@@ -123,41 +119,10 @@ const Navbar = () => {
               <button type="button" onClick={() => setSearchOpen(true)} aria-label="Search" className="flex h-10 w-10 items-center justify-center rounded-full bg-white text-gray-700 shadow-[0_2px_12px_rgba(15,23,42,0.12)] ring-1 ring-black/5">
                 <SearchIcon className="h-4 w-4" strokeWidth={2} />
               </button>
-              <button type="button" onClick={() => setMobileMenuOpen(true)} aria-label="Open menu" className="flex h-10 w-10 items-center justify-center rounded-full bg-gray-100 text-gray-800">
-                <Menu className="h-5 w-5" strokeWidth={1.8} />
-              </button>
-            </div>
           </div>
-        )}
-      </motion.header>
-
-      {mobileMenuOpen && (
-        <div className="fixed inset-0 z-[80]">
-          <button type="button" aria-label="Close menu" className="absolute inset-0 bg-black/30" onClick={() => setMobileMenuOpen(false)} />
-          <motion.div initial={{ x: '100%' }} animate={{ x: 0 }} className="absolute bottom-0 right-0 top-0 w-[320px] max-w-[86vw] bg-white p-6 shadow-2xl">
-            <div className="mb-8 flex items-center justify-between">
-              <img src={sttLogo} alt="Set The Table" className="h-10 w-auto" style={brandLogoFilter} />
-              <button type="button" onClick={() => setMobileMenuOpen(false)} className="flex h-9 w-9 items-center justify-center rounded-full bg-gray-100 text-gray-700">
-                <X className="h-4 w-4" strokeWidth={2} />
-              </button>
-            </div>
-            <div className="space-y-2">
-              {[
-                { href: '/', label: 'Home' },
-                { href: '/events', label: 'Events' },
-                { href: '/experiences', label: 'Experiences' },
-                { href: '/venues', label: 'Venues' },
-                { href: bookingsHref, label: 'My Bookings' },
-                { href: profileHref, label: 'Profile' },
-              ].map((item) => (
-                <Link key={item.href} to={item.href} onClick={() => setMobileMenuOpen(false)} className="block rounded-2xl px-4 py-3 text-base font-extrabold text-gray-800 hover:bg-gray-50">
-                  {item.label}
-                </Link>
-              ))}
-            </div>
-          </motion.div>
         </div>
       )}
+      </motion.header>
 
       {mobileBottomNav}
     </>

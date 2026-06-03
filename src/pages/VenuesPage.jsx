@@ -147,19 +147,21 @@ const VenuesPage = () => {
 
         <section className="mt-12">
           <SttSectionHeader title="Popular Locations" />
-          <div className="mobile-rail-fade no-scrollbar -mx-5 flex w-screen max-w-[100vw] snap-x snap-mandatory gap-3 overflow-x-auto overscroll-x-contain px-5 pb-4 scroll-px-5 md:mx-0 md:w-full md:max-w-full md:gap-5 md:px-0 md:scroll-px-0">
+          <div className="no-scrollbar -mx-5 flex w-screen max-w-[100vw] snap-x snap-mandatory gap-3 overflow-x-auto overscroll-x-contain px-5 pb-4 scroll-px-5 md:mx-0 md:grid md:w-full md:max-w-full md:grid-cols-5 md:gap-5 md:overflow-visible md:px-0 md:pb-0 md:scroll-px-0">
             {topVenueLocations.map((location) => (
-              <Link key={location.name} to={`/explore?tab=venues&location=${encodeURIComponent(location.name)}`} className="block w-[154px] shrink-0 snap-start md:w-[190px]">
-                <div className="aspect-[1.08] overflow-hidden rounded-[14px] bg-gray-100 shadow-[0_2px_10px_rgba(15,23,42,0.08)] ring-1 ring-black/[0.04]">
+              <Link key={location.name} to={`/explore?tab=venues&location=${encodeURIComponent(location.name)}`} className="block w-[154px] shrink-0 snap-start md:w-full md:min-w-0">
+                <div className="aspect-[1.22] overflow-hidden rounded-[14px] bg-gray-100 shadow-[0_2px_10px_rgba(15,23,42,0.08)] ring-1 ring-black/[0.04]">
                   <img src={location.image} alt={location.name} className="h-full w-full object-cover" />
                 </div>
-                <div className="pt-2">
-                  <p className="text-[9px] font-bold uppercase text-brand-purple">Location</p>
-                  <h3 className="mt-1 text-sm font-extrabold text-gray-950">{location.name}</h3>
-                  <p className="mt-1 flex items-center gap-1 text-xs text-gray-500">
+                <div className="flex min-h-[82px] flex-col pt-2">
+                  <h3 className="text-sm font-semibold text-gray-950">{location.name}</h3>
+                  <p className="mt-1.5 flex items-center gap-1 text-xs text-gray-500">
                     <MapPin className="h-3 w-3" strokeWidth={1.8} />
                     {location.venues} venues
                   </p>
+                  <div className="mt-auto flex pt-2">
+                    <span className="w-fit rounded-full bg-emerald-50 px-2 py-1 text-[9px] font-semibold uppercase leading-none text-emerald-700 ring-1 ring-emerald-100">Location</span>
+                  </div>
                 </div>
               </Link>
             ))}

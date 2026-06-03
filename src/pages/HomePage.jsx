@@ -1,19 +1,22 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
-import { CalendarDays, ChevronLeft, ChevronRight, Clock, Heart, MapPin, Menu, Search, Sparkles, User, X } from 'lucide-react'
-import { SttDesktopSearchBar } from '../components/SttDiscovery'
+import { CalendarDays, ChevronLeft, ChevronRight, Clock, Heart, MapPin, Search, Sparkles, User, X } from 'lucide-react'
+import { SttCategoryLinks, SttDesktopSearchBar } from '../components/SttDiscovery'
 import { featuredEvents, homeTopVenues, trendingEvents } from '../features/experiences/data'
 import sttLogo from '../shared/assets/sttmainlogo.svg'
 
 const featuredEventItems = featuredEvents.filter(Boolean)
-const trendingExperienceItems = trendingEvents.filter(Boolean)
-const popularVenueItems = homeTopVenues.filter(Boolean)
+const uniqueById = (items) => {
+  const seen = new Set()
+  return items.filter((item) => {
+    if (!item || seen.has(item.id)) return false
+    seen.add(item.id)
+    return true
+  })
+}
 
-const categoryTabs = [
-  { id: 'events', label: 'Events', icon: CalendarDays, to: '/events' },
-  { id: 'experiences', label: 'Experiences', icon: Sparkles, to: '/experiences' },
-  { id: 'venues', label: 'Venues', icon: MapPin, to: '/venues' },
-]
+const trendingExperienceItems = uniqueById([...trendingEvents, ...featuredEvents].filter(Boolean)).slice(0, 5)
+const popularVenueItems = homeTopVenues.filter(Boolean)
 
 const bannerSlides = [
   {
@@ -89,28 +92,17 @@ const formatEventDay = (event) => {
 
 const getEventAddress = (event) => event?.venueDetails?.address || event?.location || event?.venue || 'Dubai'
 
-function CategoryLinks() {
-  return (
-    <div className="mx-auto flex w-full max-w-[330px] items-center justify-between gap-2 md:max-w-[360px]">
-      {categoryTabs.map((tab) => {
-        const Icon = tab.icon
-
-        return (
-          <Link
-            key={tab.id}
-            to={tab.to}
-            className="group flex min-w-[82px] flex-col items-center gap-1.5 text-center text-brand-purple transition-colors"
-          >
-            <span className="flex h-9 w-9 items-center justify-center rounded-full bg-brand-purple/10 text-brand-purple transition-shadow group-hover:shadow-[0_2px_8px_rgba(34,34,34,0.10)]">
-              <Icon className="h-5 w-5" strokeWidth={2} />
-            </span>
-            <span className="text-[10px] font-bold leading-none text-brand-purple">{tab.label}</span>
-          </Link>
-        )
-      })}
-    </div>
-  )
+const getCategoryPillClassName = (label = '') => {
+  const value = label.toLowerCase()
+  if (value.includes('beach') || value.includes('pool')) return 'bg-cyan-50 text-cyan-700 ring-cyan-100'
+  if (value.includes('night') || value.includes('party')) return 'bg-fuchsia-50 text-fuchsia-700 ring-fuchsia-100'
+  if (value.includes('dining') || value.includes('restaurant')) return 'bg-amber-50 text-amber-700 ring-amber-100'
+  if (value.includes('brunch')) return 'bg-rose-50 text-rose-700 ring-rose-100'
+  if (value.includes('venue')) return 'bg-emerald-50 text-emerald-700 ring-emerald-100'
+  return 'bg-[#f4edff] text-brand-purple ring-brand-purple/15'
 }
+
+const dayPillClassName = 'bg-emerald-50 text-emerald-700 ring-emerald-100'
 
 function SearchField({ icon: Icon, placeholder, value, onChange }) {
   return (
@@ -229,8 +221,8 @@ function SearchOverlay({ open, initialKeyword, onClose, onApplySearch }) {
 
 function FeaturedAdSlider({ slides, activeIndex, onPrevious, onNext, onSelect }) {
   return (
-    <div className="w-full max-w-[100vw] overflow-hidden md:px-8">
-      <section className="relative mx-5 mt-5 h-[154px] w-[calc(100vw-40px)] overflow-hidden rounded-xl bg-[#d7d7d7] shadow-[0_4px_18px_rgba(15,23,42,0.10)] md:mx-auto md:mt-9 md:h-[210px] md:w-full md:max-w-6xl md:rounded-2xl" aria-label="Featured ads">
+    <div className="mx-auto w-full max-w-[100vw] overflow-hidden px-5 md:max-w-6xl md:px-8">
+      <section className="relative mt-5 h-[154px] w-full overflow-hidden rounded-xl bg-[#d7d7d7] shadow-[0_4px_18px_rgba(15,23,42,0.10)] md:mt-9 md:h-[210px] md:rounded-2xl" aria-label="Featured ads">
         {slides.map((slide, index) => (
           <Link
             key={slide.id}
@@ -301,36 +293,38 @@ function CompactEventCard({ event, badge = 'Featured' }) {
   const categoryLabel = event.category || event.type || 'Event'
 
   return (
-    <Link to={`/events/${event.id}`} className="block w-[174px] shrink-0 snap-start md:w-[224px]">
+    <Link to={`/events/${event.id}`} className="block w-[174px] shrink-0 snap-start md:w-full md:min-w-0">
       <article className="group">
-        <div className="relative aspect-[1.12] overflow-hidden rounded-[14px] bg-gray-100 shadow-[0_2px_10px_rgba(15,23,42,0.08)] ring-1 ring-black/[0.04] transition-shadow group-hover:shadow-[0_5px_18px_rgba(15,23,42,0.10)]">
+        <div className="relative aspect-[1.48] overflow-hidden rounded-[14px] bg-gray-100 shadow-[0_2px_10px_rgba(15,23,42,0.08)] ring-1 ring-black/[0.04] transition-shadow group-hover:shadow-[0_5px_18px_rgba(15,23,42,0.10)]">
           <img src={event.image} alt={event.title} className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.03]" />
-          <span className="absolute left-2 top-2 rounded-full bg-white px-2 py-1 text-[9px] font-extrabold leading-none text-gray-950 shadow-sm">
+          <span className="absolute left-2 top-2 rounded-full bg-white px-2 py-1 text-[9px] font-semibold leading-none text-gray-950 shadow-sm">
             {badge}
           </span>
-          <button type="button" aria-label="Save event" className="absolute right-2 top-2 flex h-7 w-7 items-center justify-center rounded-full bg-white/86 text-gray-700 shadow-sm backdrop-blur-md">
-            <Heart className="h-4 w-4" strokeWidth={1.8} />
+          <button type="button" aria-label="Save event" className="absolute right-2 top-2 flex h-7 w-7 items-center justify-center rounded-full bg-black/25 text-white shadow-sm backdrop-blur-md">
+            <Heart className="h-4 w-4 text-white" strokeWidth={2} />
           </button>
         </div>
-        <div className="pt-2">
-          <div className="mb-2 flex flex-wrap gap-1.5">
-            <span className="rounded-full bg-brand-purple/10 px-2 py-1 text-[8px] font-extrabold uppercase leading-none text-brand-purple md:text-[9px]">{categoryLabel}</span>
-            <span className="rounded-full bg-gray-100 px-2 py-1 text-[8px] font-extrabold uppercase leading-none text-gray-600 md:text-[9px]">{dayLabel}</span>
-          </div>
+        <div className="flex min-h-[104px] flex-col pt-2">
           <div className="flex items-start justify-between gap-2">
-            <h3 className="line-clamp-2 min-h-[32px] text-[12px] font-extrabold leading-tight text-gray-950 md:min-h-[38px] md:text-sm">
+            <h3 className="line-clamp-2 min-h-[32px] text-[12px] font-semibold leading-tight text-gray-950 md:min-h-[38px] md:text-[13px]">
               {event.title}
             </h3>
             <div className="shrink-0 text-right">
-              <p className="text-[9px] font-extrabold leading-none text-gray-950 md:text-xs">AED {event.price}</p>
+              <p className="text-[9px] font-semibold leading-none text-gray-950 md:text-[11px]">AED {event.price}</p>
               <p className="text-[7px] uppercase leading-none text-gray-400 md:text-[8px]">from</p>
             </div>
           </div>
-          <p className="mt-1 flex items-center gap-1 truncate text-[9px] font-medium text-gray-500 md:text-xs">
-            <MapPin className="h-3 w-3 shrink-0 text-gray-400" strokeWidth={1.8} />
-            <span className="truncate">{event.venue}</span>
-          </p>
-          <p className="mt-0.5 truncate text-[9px] text-gray-400 md:text-xs">{getEventAddress(event)}</p>
+          <div className="mt-1.5 space-y-0.5">
+            <p className="flex items-center gap-1 truncate text-[9px] font-medium text-gray-500 md:text-xs">
+              <MapPin className="h-3 w-3 shrink-0 text-gray-400" strokeWidth={1.8} />
+              <span className="truncate">{event.venue}</span>
+            </p>
+            <p className="truncate text-[9px] text-gray-400 md:text-xs">{getEventAddress(event)}</p>
+          </div>
+          <div className="mt-auto flex min-h-[22px] flex-wrap gap-1.5 pt-2">
+            <span className={`rounded-full px-2 py-1 text-[8px] font-semibold uppercase leading-none ring-1 md:text-[9px] ${getCategoryPillClassName(categoryLabel)}`}>{categoryLabel}</span>
+            <span className={`rounded-full px-2 py-1 text-[8px] font-semibold uppercase leading-none ring-1 md:text-[9px] ${dayPillClassName}`}>{dayLabel}</span>
+          </div>
         </div>
       </article>
     </Link>
@@ -338,23 +332,27 @@ function CompactEventCard({ event, badge = 'Featured' }) {
 }
 
 function CompactVenueCard({ venue }) {
+  const categoryLabel = venue.category || venue.type || 'Venue'
+
   return (
-    <Link to={`/venues/${venue.id}`} className="block w-[142px] shrink-0 snap-start md:w-[184px]">
+    <Link to={`/venues/${venue.id}`} className="block w-[142px] shrink-0 snap-start md:w-full md:min-w-0">
       <article className="group">
-        <div className="relative aspect-[1.08] overflow-hidden rounded-[14px] bg-gray-100 shadow-[0_2px_10px_rgba(15,23,42,0.08)] ring-1 ring-black/[0.04] transition-shadow group-hover:shadow-[0_5px_18px_rgba(15,23,42,0.10)]">
+        <div className="relative aspect-[1.22] overflow-hidden rounded-[14px] bg-gray-100 shadow-[0_2px_10px_rgba(15,23,42,0.08)] ring-1 ring-black/[0.04] transition-shadow group-hover:shadow-[0_5px_18px_rgba(15,23,42,0.10)]">
           <img src={venue.image} alt={venue.name} className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.03]" />
-          <span className="absolute left-2 top-2 rounded-full bg-white px-2 py-1 text-[9px] font-extrabold leading-none text-gray-950 shadow-sm">Featured</span>
-          <button type="button" aria-label="Save venue" className="absolute right-2 top-2 flex h-7 w-7 items-center justify-center rounded-full bg-white/86 text-gray-700 shadow-sm backdrop-blur-md">
-            <Heart className="h-4 w-4" strokeWidth={1.8} />
+          <span className="absolute left-2 top-2 rounded-full bg-white px-2 py-1 text-[9px] font-semibold leading-none text-gray-950 shadow-sm">Featured</span>
+          <button type="button" aria-label="Save venue" className="absolute right-2 top-2 flex h-7 w-7 items-center justify-center rounded-full bg-black/25 text-white shadow-sm backdrop-blur-md">
+            <Heart className="h-4 w-4 text-white" strokeWidth={2} />
           </button>
         </div>
-        <div className="pt-2">
-          <p className="text-[9px] font-bold uppercase leading-none text-brand-purple md:text-[10px]">{venue.category}</p>
-          <h3 className="mt-1 line-clamp-2 min-h-[30px] text-[12px] font-extrabold leading-tight text-gray-950 md:min-h-[34px] md:text-sm">{venue.name}</h3>
-          <p className="mt-1 flex items-center gap-1 truncate text-[9px] text-gray-500 md:text-xs">
+        <div className="flex min-h-[82px] flex-col pt-2">
+          <h3 className="line-clamp-2 min-h-[30px] text-[12px] font-semibold leading-tight text-gray-950 md:min-h-[34px] md:text-[13px]">{venue.name}</h3>
+          <div className="mt-1.5 flex min-h-[18px] items-center gap-1 truncate text-[9px] text-gray-500 md:text-xs">
             <MapPin className="h-3 w-3 shrink-0 text-gray-400" strokeWidth={1.8} />
             <span className="truncate">{venue.location}</span>
-          </p>
+          </div>
+          <div className="mt-auto flex pt-2">
+            <span className={`w-fit rounded-full px-2 py-1 text-[8px] font-semibold uppercase leading-none ring-1 md:text-[9px] ${getCategoryPillClassName(categoryLabel)}`}>{categoryLabel}</span>
+          </div>
         </div>
       </article>
     </Link>
@@ -363,7 +361,7 @@ function CompactVenueCard({ venue }) {
 
 function HorizontalRail({ children }) {
   return (
-    <div className="mobile-rail-fade no-scrollbar -mx-5 flex w-screen max-w-[100vw] min-w-0 snap-x snap-mandatory gap-3 overflow-x-auto overscroll-x-contain px-5 pb-4 scroll-px-5 md:mx-0 md:w-full md:max-w-full md:gap-5 md:px-0 md:scroll-px-0">
+    <div className="no-scrollbar -mx-5 flex w-screen max-w-[100vw] min-w-0 snap-x snap-mandatory gap-3 overflow-x-auto overscroll-x-contain px-5 pb-4 scroll-px-5 md:mx-0 md:grid md:w-full md:max-w-full md:grid-cols-5 md:gap-5 md:overflow-visible md:px-0 md:pb-0 md:scroll-px-0">
       {children}
     </div>
   )
@@ -440,9 +438,7 @@ const HomePage = () => {
             <Link to="/" className="block">
               <img src={sttLogo} alt="Set The Table" className="h-9 w-auto" style={brandLogoFilter} />
             </Link>
-            <button type="button" aria-label="Open menu" className="flex h-8 w-8 items-center justify-center rounded-full text-brand-purple">
-              <Menu className="h-4 w-4" strokeWidth={2} />
-            </button>
+            <span className="h-8 w-8" aria-hidden="true" />
           </div>
 
           <button
@@ -459,7 +455,7 @@ const HomePage = () => {
             </span>
           </button>
 
-          <CategoryLinks />
+          <SttCategoryLinks />
         </div>
 
         <div className="hidden md:block">
@@ -467,7 +463,7 @@ const HomePage = () => {
             <Link to="/" className="flex items-center">
               <img src={sttLogo} alt="Set The Table" className="h-12 w-auto object-contain" style={brandLogoFilter} />
             </Link>
-            <CategoryLinks />
+            <SttCategoryLinks />
             <div className="flex items-center justify-end gap-5 text-brand-purple">
               <Link to="/venues" className="text-[11px] font-extrabold uppercase tracking-[0.32em] text-gray-700">List a Venue</Link>
               <Link to="/profile?tab=favorites" aria-label="Favorites">
@@ -479,13 +475,10 @@ const HomePage = () => {
               <Link to="/profile" aria-label="Profile" className="flex h-10 w-10 items-center justify-center rounded-full border border-brand-purple/45 text-xs font-bold">
                 <User className="h-4 w-4" strokeWidth={1.8} />
               </Link>
-              <button type="button" aria-label="Open menu" className="flex h-10 w-10 items-center justify-center rounded-full bg-gray-100 text-gray-800">
-                <Menu className="h-5 w-5" strokeWidth={1.8} />
-              </button>
             </div>
           </div>
 
-          <SttDesktopSearchBar mode="home" searchTerm={activeSearchTerm} onApplySearch={handleApplySearch} />
+          <SttDesktopSearchBar mode="home" searchTerm={activeSearchTerm} onApplySearch={handleApplySearch} onOpenSearch={() => setSearchOpen(true)} />
         </div>
       </section>
 
