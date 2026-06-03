@@ -11,7 +11,7 @@ const brandLogoFilter = {
   filter: 'brightness(0) saturate(100%) invert(59%) sepia(19%) saturate(761%) hue-rotate(238deg) brightness(88%) contrast(87%)',
 }
 
-const discoveryPaths = ['/', '/index.html', '/events', '/experiences', '/venues']
+const discoveryPaths = ['/', '/index.html', '/events', '/experiences', '/venues', '/map']
 
 const buildExploreHref = ({ keyword = '', location = '', category = '', dateTime = '', guests = '' } = {}) => {
   const params = new URLSearchParams()
@@ -34,13 +34,13 @@ const Navbar = () => {
   const navigate = useNavigate()
   const { isAuthenticated } = useAuth()
   const usesDiscoveryHeader = discoveryPaths.includes(location.pathname)
-  const mobileSearchOpen = (location.pathname === '/' || location.pathname === '/index.html') && new URLSearchParams(location.search).get('search') === 'open'
+  const mobileSearchOpen = location.pathname === '/map' || ((location.pathname === '/' || location.pathname === '/index.html') && new URLSearchParams(location.search).get('search') === 'open')
   const profileHref = isAuthenticated ? '/profile' : '/auth?redirect=%2Fprofile'
   const bookingsHref = isAuthenticated ? '/profile?tab=bookings' : '/auth?redirect=%2Fprofile%3Ftab%3Dbookings'
 
   const bottomNavigationItems = [
     { href: '/', label: 'Home', icon: HomeIcon, active: (location.pathname === '/' || location.pathname === '/index.html') && !mobileSearchOpen },
-    { href: '/?search=open', label: 'Search', icon: SearchIcon, active: mobileSearchOpen || location.pathname === '/explore' },
+    { href: '/map', label: 'Search', icon: SearchIcon, active: mobileSearchOpen || location.pathname === '/explore' },
     { href: bookingsHref, label: 'My Bookings', icon: Calendar, active: location.pathname === '/profile' && new URLSearchParams(location.search).get('tab') === 'bookings' },
     { href: profileHref, label: 'Profile', icon: User, active: location.pathname === '/profile' && new URLSearchParams(location.search).get('tab') !== 'bookings' },
   ]

@@ -1,5 +1,5 @@
 ﻿import React from 'react'
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom'
+import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-router-dom'
 import { AuthProvider } from './shared/context/AuthContext'
 import { BookingProvider } from './shared/context/BookingContext'
 import { CartProvider } from './shared/context/CartContext'
@@ -15,6 +15,7 @@ import VenueDetailsPage from './pages/VenueDetailsPage'
 import PackagesPage from './pages/PackagesPage'
 import PackageDetailPage from './pages/PackageDetailPage'
 import ExplorePage from './pages/ExplorePage'
+import MapSearchPage from './pages/MapSearchPage'
 import BookingPage from './pages/BookingPage'
 import ProfilePage from './pages/ProfilePage'
 import AuthPage from './pages/AuthPage'
@@ -48,12 +49,16 @@ class AppErrorBoundary extends React.Component {
 }
 
 function AppShell() {
+  const location = useLocation()
+  const hideFooter = location.pathname === '/map'
+
   return <div className="min-h-screen flex flex-col">
     <Navbar />
     <main className="flex-1">
       <Routes>
         <Route path="/" element={<HomePage />} />
         <Route path="/index.html" element={<HomePage />} />
+        <Route path="/map" element={<MapSearchPage />} />
         <Route path="/explore" element={<ExplorePage />} />
         <Route path="/experiences" element={<ExplorePage />} />
         <Route path="/events" element={<EventsPage />} />
@@ -74,7 +79,7 @@ function AppShell() {
         <Route path="/orders/:orderId/confirmation" element={<RequireAuth><BookingConfirmationPage /></RequireAuth>} />
       </Routes>
     </main>
-    <Footer />
+    {!hideFooter && <Footer />}
   </div>
 }
 
