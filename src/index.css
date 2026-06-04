@@ -5,7 +5,7 @@
 
 :root {
   --background: 0 0% 100%;
-  --foreground: 222.2 84% 4.9%;
+  --foreground: 0 0% 20%;
   --card: 0 0% 100%;
   --card-foreground: 222.2 84% 4.9%;
   --popover: 0 0% 100%;
@@ -25,10 +25,12 @@
   --ring: 18 61% 66%;
   --radius: 0.75rem;
   --brand-purple: #AB83BB;
-  --brand-blue: #2563eb;
+  --brand-blue: #67A1AC;
+  --brand-green: #67A1AC;
   --brand-red: #ef4444;
-  --brand-orange: #f97316;
-  --brand-yellow: #facc15;
+  --brand-orange: #D4A463;
+  --brand-yellow: #D4A463;
+  --brand-black: #343434;
 }
 
 html { scroll-behavior: smooth; }

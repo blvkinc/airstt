@@ -1,31 +1,32 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { CalendarDays, ChevronDown, Heart, LocateFixed, MapPin, Minus, Plus, Search, Settings2, SlidersHorizontal, Sparkles, Star, X } from 'lucide-react'
+import { ArrowLeft, CalendarDays, ChevronDown, LocateFixed, MapPin, Minus, Plus, Search, Settings2, SlidersHorizontal, Sparkles, Star, X } from 'lucide-react'
 import { useEventsCatalog, useVenuesCatalog } from '../features/catalog'
+import { getEventHref } from '../shared/lib/eventRoutes'
 
 const categoryConfig = {
   venues: {
     label: 'Venues',
     icon: MapPin,
-    accent: '#16A085',
-    chip: 'border-emerald-500 text-emerald-700 bg-emerald-50',
-    marker: 'bg-emerald-600',
+    accent: '#67A1AC',
+    chip: 'border-brand-green bg-brand-green text-white',
+    marker: 'bg-brand-green',
     count: '1.3K+ venues in map area',
   },
   events: {
     label: 'Events',
     icon: CalendarDays,
     accent: '#AB83BB',
-    chip: 'border-brand-purple text-brand-purple bg-brand-purple/10',
+    chip: 'border-brand-purple bg-brand-purple text-white',
     marker: 'bg-brand-purple',
     count: '420+ events in map area',
   },
   experiences: {
     label: 'Experiences',
     icon: Sparkles,
-    accent: '#4F7DD9',
-    chip: 'border-blue-500 text-blue-700 bg-blue-50',
-    marker: 'bg-blue-600',
+    accent: '#D4A463',
+    chip: 'border-brand-yellow bg-brand-yellow text-white',
+    marker: 'bg-brand-yellow',
     count: '260+ experiences in map area',
   },
 }
@@ -37,11 +38,8 @@ const DEFAULT_MAP_ZOOM = 11
 
 let googleMapsLoaderPromise = null
 
-const sortOptions = [
-  { id: 'best', label: 'Best match', icon: Heart },
-  { id: 'nearest', label: 'Nearest', icon: MapPin },
-  { id: 'top', label: 'Top rated', icon: Star },
-]
+const mapLocationFilterOptions = ['Dubai Marina', 'Palm Jumeirah']
+const mapFilterGroups = ['Cuisine', 'Drinks', 'Music', 'Entertainment', 'Guest Perks', 'Dress Code']
 
 const experienceTerms = ['experience', 'brunch', 'pool', 'night', 'party', 'dining']
 
@@ -210,7 +208,7 @@ function getItems(activeCategory, events = [], venues = []) {
       meta: `${event.venue || location} - ${event.category || 'Experience'}`,
       submeta: `${event.date || 'Upcoming'}${event.time ? ` - ${event.time}` : ''}`,
       searchAddress: `${event.venue || event.title || ''} ${event.location || event.venueDetails?.address || ''} Dubai UAE`,
-      to: `/events/${event.id}`,
+      to: getEventHref(event),
     }
   })
 }
@@ -223,6 +221,19 @@ function itemMatchesSearch(item, query) {
     .join(' ')
     .toLowerCase()
     .includes(search)
+}
+
+function itemMatchesMapFilters(item, filters) {
+  const haystack = [item.title, item.meta, item.submeta, item.category, item.location, item.searchAddress]
+    .join(' ')
+    .toLowerCase()
+
+  for (const key of ['city', 'area', 'startDate', 'endDate']) {
+    const value = String(filters[key] || '').trim().toLowerCase()
+    if (value && !haystack.includes(value)) return false
+  }
+
+  return true
 }
 
 function MapBackdrop({ activeCategory, items, selectedItemId, onSelectItem }) {
@@ -429,70 +440,80 @@ function MapBackdrop({ activeCategory, items, selectedItemId, onSelectItem }) {
   )
 }
 
-function FilterSheet({ open, activeCategory, filters, onFiltersChange, onClear, onClose }) {
+function FilterSheet({ open, filters, onFiltersChange, onClear, onClose }) {
   if (!open) return null
 
-  const config = categoryConfig[activeCategory]
-  const sortBy = filters.sortBy
-  const maxPrice = filters.maxPrice
+  const toggleFilter = (key, value) => {
+    onFiltersChange({ [key]: filters[key] === value ? '' : value })
+  }
 
   return (
-    <div className="fixed inset-0 z-[80] flex items-end justify-center bg-black/20 md:items-center">
-      <button type="button" aria-label="Close filters" className="absolute inset-0" onClick={onClose} />
-      <section className="relative max-h-[92vh] w-full max-w-[430px] overflow-y-auto rounded-t-[24px] bg-white px-6 pb-6 pt-5 shadow-[0_-18px_46px_rgba(15,23,42,0.18)] md:rounded-lg">
-        <div className="mb-5 flex items-center justify-between">
-          <h2 className="text-xl font-extrabold text-gray-950">Filters</h2>
-          <button type="button" onClick={onClose} aria-label="Close filters" className="flex h-9 w-9 items-center justify-center rounded-full text-gray-950">
-            <X className="h-5 w-5" strokeWidth={2.4} />
+    <div className="fixed inset-0 z-[80] flex justify-center bg-white md:bg-black/20 md:py-6">
+      <section className="h-full w-full max-w-[430px] overflow-y-auto bg-white px-7 pb-10 pt-11 shadow-[0_18px_46px_rgba(15,23,42,0.18)] md:rounded-[24px]">
+        <div className="mb-7 flex items-center gap-2">
+          <button type="button" onClick={onClose} aria-label="Close filters" className="-ml-1 flex h-8 w-8 items-center justify-center rounded-full text-brand-black">
+            <ArrowLeft className="h-4 w-4" strokeWidth={2} />
           </button>
+          <h2 className="text-2xl font-semibold text-brand-black">Filters</h2>
         </div>
 
-        <div className="mb-7 rounded-lg bg-gray-50 px-4 py-3 text-sm font-semibold text-gray-600 ring-1 ring-black/[0.04]">
-          Showing {config.label.toLowerCase()} in the current map area.
+        <div className="space-y-6">
+          {[
+            ['startDate', 'Starts'],
+            ['endDate', 'Ends'],
+          ].map(([key, label]) => (
+            <label key={key} className="block">
+              <span className="mb-2 block text-sm font-semibold text-brand-black">{label}</span>
+              <span className="relative flex h-14 items-center overflow-hidden rounded-[15px] border border-brand-purple/35 bg-white px-4 shadow-[inset_0_2px_12px_rgba(52,52,52,0.08),0_2px_12px_rgba(171,131,187,0.12)]">
+                <input
+                  value={filters[key] || ''}
+                  onChange={(event) => onFiltersChange({ [key]: event.target.value })}
+                  placeholder="dd----yyyy"
+                  className="w-full bg-transparent pr-10 text-sm font-normal text-brand-black outline-none placeholder:text-brand-black/70"
+                />
+                <CalendarDays className="pointer-events-none absolute right-4 h-5 w-5 text-brand-purple" strokeWidth={2} />
+              </span>
+            </label>
+          ))}
+
+          {[
+            ['city', 'City'],
+            ['area', 'Area'],
+          ].map(([key, label]) => (
+            <section key={key} className="pt-3">
+              <h3 className="mb-3 text-sm font-semibold text-brand-black">{label}</h3>
+              <div className="flex flex-wrap gap-2">
+                {mapLocationFilterOptions.map((option) => {
+                  const selected = filters[key] === option
+
+                  return (
+                    <button
+                      key={`${key}-${option}`}
+                      type="button"
+                      onClick={() => toggleFilter(key, option)}
+                      className={`h-8 rounded-full px-5 text-sm font-semibold shadow-sm ring-1 transition ${selected ? 'bg-brand-purple text-white ring-brand-purple shadow-[0_8px_18px_rgba(171,131,187,0.28)]' : 'bg-white text-gray-600 ring-brand-purple'}`}
+                    >
+                      {option}
+                    </button>
+                  )
+                })}
+              </div>
+            </section>
+          ))}
+
+          <div className="pt-4">
+            {mapFilterGroups.map((group) => (
+              <button key={group} type="button" className="flex h-[74px] w-full items-center justify-between border-b border-gray-200 text-left">
+                <span className="text-sm font-semibold text-brand-black">{group}</span>
+                <ChevronDown className="h-4 w-4 text-brand-purple" strokeWidth={2.1} />
+              </button>
+            ))}
+          </div>
         </div>
 
-        <section>
-          <h3 className="mb-3 text-sm font-extrabold text-gray-950">Sort by</h3>
-          <div className="grid grid-cols-3 gap-3">
-            {sortOptions.map((option) => {
-              const Icon = option.icon
-              const selected = sortBy === option.id
-
-              return (
-                <button
-                  key={option.id}
-                  type="button"
-                  onClick={() => onFiltersChange({ sortBy: option.id })}
-                  className={`flex h-24 flex-col items-center justify-center gap-2 rounded-[14px] border text-center text-sm font-extrabold shadow-sm ${selected ? 'border-brand-purple bg-brand-purple/10 text-brand-purple ring-1 ring-brand-purple' : 'border-gray-200 bg-white text-gray-950'}`}
-                >
-                  <Icon className="h-6 w-6" strokeWidth={selected ? 2.2 : 1.8} />
-                  {option.label}
-                </button>
-              )
-            })}
-          </div>
-        </section>
-
-        <section className="mt-7 border-t border-gray-100 pt-6">
-          <div className="mb-5 flex items-center justify-between">
-            <h3 className="text-sm font-extrabold text-gray-950">Max price</h3>
-            <span className="text-sm font-bold text-gray-700">{maxPrice >= 6000 ? 'Any price' : `AED ${maxPrice.toLocaleString()}`}</span>
-          </div>
-          <input
-            type="range"
-            min="250"
-            max="6000"
-            step="25"
-            value={maxPrice}
-            onChange={(event) => onFiltersChange({ maxPrice: Number(event.target.value) })}
-            className="h-1.5 w-full cursor-pointer accent-brand-purple"
-            style={{ accentColor: config.accent }}
-          />
-        </section>
-
-        <div className="sticky bottom-0 -mx-6 mt-6 grid grid-cols-2 gap-3 border-t border-gray-100 bg-white px-6 pt-4">
-          <button type="button" onClick={onClear} className="h-12 rounded-full border border-gray-200 text-sm font-extrabold text-gray-950">Clear all</button>
-          <button type="button" onClick={onClose} className="h-12 rounded-full bg-gray-950 text-sm font-extrabold text-white">Apply</button>
+        <div className="sticky bottom-0 -mx-7 mt-8 grid grid-cols-2 gap-3 border-t border-gray-100 bg-white px-7 pt-4">
+          <button type="button" onClick={onClear} className="h-11 rounded-full border border-gray-200 text-sm font-semibold text-brand-black">Clear</button>
+          <button type="button" onClick={onClose} className="h-11 rounded-full bg-brand-black text-sm font-semibold text-white">Apply</button>
         </div>
       </section>
     </div>
@@ -506,6 +527,10 @@ const MapSearchPage = () => {
   const [selectedItemId, setSelectedItemId] = useState('')
   const [sortBy, setSortBy] = useState('nearest')
   const [maxPrice, setMaxPrice] = useState(6000)
+  const [startDate, setStartDate] = useState('')
+  const [endDate, setEndDate] = useState('')
+  const [city, setCity] = useState('')
+  const [area, setArea] = useState('')
   const { data: events = [], loading: eventsLoading, error: eventsError, retry: retryEvents } = useEventsCatalog('')
   const { data: venues = [], loading: venuesLoading, error: venuesError, retry: retryVenues } = useVenuesCatalog('', [])
   const dataLoading = activeCategory === 'venues' ? venuesLoading : eventsLoading
@@ -515,13 +540,14 @@ const MapSearchPage = () => {
   const items = useMemo(() => {
     const searched = allItems
       .filter((item) => itemMatchesSearch(item, searchQuery))
+      .filter((item) => itemMatchesMapFilters(item, { startDate, endDate, city, area }))
       .filter((item) => {
         const priceValue = getPriceValue(item)
         return maxPrice >= 6000 || priceValue === null || priceValue <= maxPrice
       })
 
     return sortItems(searched, sortBy)
-  }, [allItems, maxPrice, searchQuery, sortBy])
+  }, [allItems, area, city, endDate, maxPrice, searchQuery, sortBy, startDate])
   const selectedItem = useMemo(() => items.find((item) => item.id === selectedItemId) || items[0] || null, [items, selectedItemId])
   const config = categoryConfig[activeCategory]
 
@@ -548,11 +574,19 @@ const MapSearchPage = () => {
   const handleFiltersChange = (updates) => {
     if (updates.sortBy) setSortBy(updates.sortBy)
     if (updates.maxPrice !== undefined) setMaxPrice(updates.maxPrice)
+    if (updates.startDate !== undefined) setStartDate(updates.startDate)
+    if (updates.endDate !== undefined) setEndDate(updates.endDate)
+    if (updates.city !== undefined) setCity(updates.city)
+    if (updates.area !== undefined) setArea(updates.area)
   }
 
   const clearFilters = () => {
     setSortBy('nearest')
     setMaxPrice(6000)
+    setStartDate('')
+    setEndDate('')
+    setCity('')
+    setArea('')
     setSearchQuery('')
   }
 
@@ -676,7 +710,7 @@ const MapSearchPage = () => {
               const selected = selectedItem?.id === item.id
 
               return (
-                <article key={item.id} className={`overflow-hidden rounded-[18px] bg-white shadow-[0_3px_18px_rgba(15,23,42,0.10)] ring-1 transition-all ${selected ? 'ring-2 ring-brand-purple' : 'ring-black/[0.04]'}`}>
+                <article key={item.id} className={`overflow-hidden bg-white shadow-[0_3px_18px_rgba(15,23,42,0.10)] ring-1 transition-all ${item.type === 'venue' ? 'rounded-lg' : 'rounded-[18px]'} ${selected ? 'ring-2 ring-brand-purple' : 'ring-black/[0.04]'}`}>
                   <button type="button" onClick={() => setSelectedItemId(item.id)} className="block w-full text-left">
                     {item.image ? (
                       <img src={item.image} alt={item.title} className="h-44 w-full object-cover" />
@@ -687,18 +721,18 @@ const MapSearchPage = () => {
                   <div className="p-3">
                     <div className="flex items-start justify-between gap-3">
                       <button type="button" onClick={() => setSelectedItemId(item.id)} className="min-w-0 text-left">
-                        <h2 className="line-clamp-1 text-sm font-extrabold text-gray-950">{item.title}</h2>
+                        <h2 className="line-clamp-1 pl-1 text-[13px] font-medium text-brand-black">{item.title}</h2>
                       </button>
                       <span className="inline-flex shrink-0 items-center gap-1 text-xs font-extrabold text-gray-800">
                         <Star className="h-3.5 w-3.5 fill-yellow-400 text-yellow-400" strokeWidth={1.8} />
                         {item.rating}
                       </span>
                     </div>
-                    <p className="mt-1 line-clamp-1 text-xs font-medium text-gray-500">{item.distanceKm !== null ? `${item.distanceKm.toFixed(1)} km` : 'Map area'} - {item.meta}</p>
-                    <p className="mt-0.5 line-clamp-1 text-xs text-gray-400">{item.submeta}</p>
+                    <p className="mt-1 line-clamp-1 pl-1 text-[11px] font-normal text-gray-500">{item.distanceKm !== null ? `${item.distanceKm.toFixed(1)} km` : 'Map area'} - {item.meta}</p>
+                    <p className="mt-0.5 line-clamp-1 pl-1 text-[11px] font-normal text-gray-400">{item.submeta}</p>
                     <div className="mt-3 flex items-center justify-between gap-3">
-                      <span className="rounded-full bg-gray-100 px-3 py-1 text-[11px] font-extrabold text-gray-700">{item.category}</span>
-                      <Link to={item.to} className="rounded-full bg-gray-950 px-3 py-1.5 text-[11px] font-extrabold text-white">
+                      <span className="rounded-full px-3 py-1 text-[9px] font-normal uppercase text-white" style={{ backgroundColor: config.accent }}>{item.category}</span>
+                      <Link to={item.to} className="rounded-full bg-brand-black px-3 py-1.5 text-[11px] font-semibold text-white">
                         View
                       </Link>
                     </div>
@@ -712,8 +746,7 @@ const MapSearchPage = () => {
 
       <FilterSheet
         open={filterOpen}
-        activeCategory={activeCategory}
-        filters={{ sortBy, maxPrice }}
+        filters={{ sortBy, maxPrice, startDate, endDate, city, area }}
         onFiltersChange={handleFiltersChange}
         onClear={clearFilters}
         onClose={() => setFilterOpen(false)}

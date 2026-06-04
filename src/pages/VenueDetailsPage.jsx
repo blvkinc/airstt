@@ -7,6 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '.
 import { DetailMediaGallery } from '../shared/components/detail/DetailMediaGallery'
 import { DetailTabNav } from '../shared/components/detail/DetailTabNav'
 import { useVenueDetailCatalog } from '../features/catalog'
+import { getEventHref } from '../shared/lib/eventRoutes'
 
 const getReviewCount = (venue) => {
   const count = venue?.reviewCount ?? (Array.isArray(venue?.reviews) ? venue.reviews.length : venue?.reviews)
@@ -182,7 +183,7 @@ const VenueDetailsPage = () => {
                 ) : (
                   <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
                     {upcomingEvents.map((event) => (
-                      <Link to={`/events/${event.id}`} key={event.id} className="group block">
+                      <Link to={getEventHref(event)} key={event.id} className="group block">
                         <article className="overflow-hidden rounded-[20px] bg-white shadow-[0_6px_24px_rgba(0,0,0,0.08)] ring-1 ring-black/[0.04] transition duration-200 hover:-translate-y-0.5 hover:shadow-[0_12px_34px_rgba(0,0,0,0.12)]">
                           <div className="relative aspect-[1.38] overflow-hidden">
                             <img src={event.image} alt={event.title} className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.03]" />

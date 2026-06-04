@@ -1,5 +1,6 @@
 import { ArrowRight } from 'lucide-react'
 import { Link } from 'react-router-dom'
+import { getEventHref } from '../../../../shared/lib/eventRoutes'
 
 export function PackageBookingSummary({ event, selectedPackage }) {
   if (!selectedPackage) return null
@@ -50,7 +51,7 @@ export function PackageBookingSummary({ event, selectedPackage }) {
       </div>
 
       <Link
-        to={`/events/${event.id}?tab=packages`}
+        to={`${getEventHref(event)}?tab=packages`}
         className="w-full btn-primary flex items-center justify-center space-x-2 mb-4"
       >
         <span>Choose date to continue</span>

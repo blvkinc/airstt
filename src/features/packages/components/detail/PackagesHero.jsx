@@ -1,5 +1,6 @@
 import { Calendar, Clock, Star } from 'lucide-react'
 import { Link } from 'react-router-dom'
+import { getEventHref } from '../../../../shared/lib/eventRoutes'
 
 export function PackagesHero({ event }) {
   return (
@@ -12,7 +13,7 @@ export function PackagesHero({ event }) {
               <span>•</span>
               <Link to="/events" className="hover:text-brand-purple">Events</Link>
               <span>•</span>
-              <Link to={`/events/${event.id}`} className="hover:text-brand-purple">{event.title}</Link>
+              <Link to={getEventHref(event)} className="hover:text-brand-purple">{event.title}</Link>
               <span>•</span>
               <span>Packages</span>
             </div>

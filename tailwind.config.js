@@ -23,9 +23,11 @@ export default {
         brand: {
           purple: 'var(--brand-purple)',
           blue: 'var(--brand-blue)',
+          green: 'var(--brand-green)',
           red: 'var(--brand-red)',
           orange: 'var(--brand-orange)',
           yellow: 'var(--brand-yellow)',
+          black: 'var(--brand-black)',
         },
         primary: {
           DEFAULT: "hsl(var(--primary))",

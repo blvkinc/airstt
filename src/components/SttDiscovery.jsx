@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
-import { Building2, CalendarDays, ChevronLeft, ChevronRight, Clock, Heart, MapPin, Minus, Navigation, Plus, Search, Sparkles, Utensils, User, X } from 'lucide-react'
+import { Building2, CalendarDays, ChevronRight, Clock, Heart, MapPin, Minus, Navigation, Plus, Search, Sparkles, Utensils, User, X } from 'lucide-react'
 import sttLogo from '../shared/assets/sttmainlogo.svg'
+import { getEventHref } from '../shared/lib/eventRoutes'
 
 const discoveryLinks = [
   { id: 'events', label: 'Events', icon: CalendarDays, to: '/events' },
@@ -34,15 +35,6 @@ const desktopDestinationSuggestions = [
   { title: 'DIFC', subtitle: 'Dining rooms, lounges, and private tables', icon: Utensils, tone: 'text-slate-700 bg-slate-100' },
   { title: 'Jumeirah', subtitle: 'Casual lunches, garden venues, and cafes', icon: Sparkles, tone: 'text-brand-purple bg-brand-purple/10' },
 ]
-const desktopTypeSuggestions = [
-  { label: 'Events', value: 'Events', icon: CalendarDays },
-  { label: 'Experiences', value: 'Experiences', icon: Sparkles },
-  { label: 'Venues', value: 'Venues', icon: MapPin },
-  { label: 'Brunch', value: 'Brunch', icon: Utensils },
-  { label: 'Nightlife', value: 'Nightlife', icon: Sparkles },
-]
-const calendarWeekdays = ['M', 'T', 'W', 'T', 'F', 'S', 'S']
-
 const brandLogoFilter = {
   filter: 'brightness(0) saturate(100%) invert(59%) sepia(19%) saturate(761%) hue-rotate(238deg) brightness(88%) contrast(87%)',
 }
@@ -175,68 +167,15 @@ const getEventAddress = (event) => event?.venueDetails?.address || event?.locati
 
 const getCategoryPillClassName = (label = '') => {
   const value = label.toLowerCase()
-  if (value.includes('beach') || value.includes('pool')) return 'bg-cyan-50 text-cyan-700 ring-cyan-100'
-  if (value.includes('night') || value.includes('party')) return 'bg-fuchsia-50 text-fuchsia-700 ring-fuchsia-100'
-  if (value.includes('dining') || value.includes('restaurant')) return 'bg-amber-50 text-amber-700 ring-amber-100'
-  if (value.includes('brunch')) return 'bg-rose-50 text-rose-700 ring-rose-100'
-  if (value.includes('venue')) return 'bg-emerald-50 text-emerald-700 ring-emerald-100'
-  return 'bg-[#f4edff] text-brand-purple ring-brand-purple/15'
+  if (value.includes('beach') || value.includes('pool')) return 'bg-brand-green text-white ring-transparent'
+  if (value.includes('night') || value.includes('party')) return 'bg-brand-purple text-white ring-transparent'
+  if (value.includes('dining') || value.includes('restaurant')) return 'bg-brand-yellow text-white ring-transparent'
+  if (value.includes('brunch')) return 'bg-brand-purple text-white ring-transparent'
+  if (value.includes('venue')) return 'bg-brand-green text-white ring-transparent'
+  return 'bg-brand-purple text-white ring-transparent'
 }
 
-const dayPillClassName = 'bg-emerald-50 text-emerald-700 ring-emerald-100'
-
-const getDesktopSearchSegments = (mode, searchTerm) => {
-  const searchValue = searchTerm?.trim()
-
-  if (mode === 'condensed') {
-    return [
-      { id: 'where', label: 'Anywhere', value: searchValue || 'Anywhere', panel: 'where' },
-      { id: 'when', label: 'Anytime', value: 'Anytime', panel: 'when' },
-      { id: 'guests', label: 'Add guests', value: 'Add guests', panel: 'guests' },
-    ]
-  }
-
-  if (mode === 'venues') {
-    return [
-      { id: 'where', label: 'Where', value: searchValue || 'Search locations', panel: 'where' },
-      { id: 'type', label: 'Venue type', value: 'Add venue type', panel: 'type' },
-      { id: 'guests', label: 'Occasion', value: 'Add occasion', panel: 'guests' },
-    ]
-  }
-
-  if (mode === 'experiences') {
-    return [
-      { id: 'where', label: 'Where', value: searchValue || 'Search destinations', panel: 'where' },
-      { id: 'when', label: 'When', value: 'Add dates', panel: 'when' },
-      { id: 'type', label: 'Experience type', value: 'Add experience', panel: 'type' },
-    ]
-  }
-
-  if (mode === 'home') {
-    return [
-      { id: 'where', label: 'Where', value: searchValue || 'Search destinations', panel: 'where' },
-      { id: 'when', label: 'When', value: 'Add dates', panel: 'when' },
-      { id: 'type', label: 'Type', value: 'Events, experiences, venues', panel: 'type' },
-    ]
-  }
-
-  return [
-    { id: 'where', label: 'Where', value: searchValue || 'Search destinations', panel: 'where' },
-    { id: 'when', label: 'When', value: 'Add dates', panel: 'when' },
-    { id: 'type', label: 'Type of event', value: 'Add category', panel: 'type' },
-  ]
-}
-
-const buildCalendarDays = (year, monthIndex) => {
-  const daysInMonth = new Date(year, monthIndex + 1, 0).getDate()
-  const firstDay = new Date(year, monthIndex, 1).getDay()
-  const mondayOffset = (firstDay + 6) % 7
-
-  return [
-    ...Array.from({ length: mondayOffset }, () => null),
-    ...Array.from({ length: daysInMonth }, (_, index) => index + 1),
-  ]
-}
+const dayPillClassName = 'bg-brand-green text-white ring-transparent'
 
 function SearchField({ icon: Icon, placeholder, value, onChange, onFocus, expanded = false, children }) {
   return (
@@ -250,7 +189,7 @@ function SearchField({ icon: Icon, placeholder, value, onChange, onFocus, expand
           placeholder={placeholder}
           autoComplete="off"
           aria-expanded={expanded}
-          className="w-0 min-w-0 flex-1 bg-transparent text-sm font-medium text-gray-900 outline-none placeholder:text-gray-400"
+          className="w-0 min-w-0 flex-1 bg-transparent text-sm font-semibold text-gray-900 outline-none placeholder:text-gray-400"
         />
       </label>
       {expanded && children}
@@ -269,233 +208,292 @@ function SuggestionDropdown({ items, emptyText, icon: Icon = Search, onSelect })
                 <Icon className="h-4 w-4" strokeWidth={2} />
               </span>
               <span className="min-w-0">
-                <span className="block truncate text-sm font-bold text-gray-950">{item.label}</span>
-                {item.meta && <span className="mt-0.5 block truncate text-xs font-medium text-gray-500">{item.meta}</span>}
+                <span className="block truncate text-sm font-semibold text-gray-950">{item.label}</span>
+                {item.meta && <span className="mt-0.5 block truncate text-xs font-semibold text-gray-500">{item.meta}</span>}
               </span>
             </button>
           ))}
         </div>
       ) : (
-        <div className="px-4 py-3 text-sm font-medium text-gray-500">{emptyText}</div>
+        <div className="px-4 py-3 text-sm font-semibold text-gray-500">{emptyText}</div>
       )}
     </div>
   )
 }
 
-function DesktopWherePanel({ onSelect }) {
-  return (
-    <div className="w-[520px] max-w-[calc(100vw-48px)] rounded-[28px] bg-white p-7 shadow-[0_18px_54px_rgba(15,23,42,0.18)] ring-1 ring-black/[0.06]">
-      <p className="mb-4 text-sm font-semibold text-gray-950">Suggested destinations</p>
-      <div className="max-h-[520px] space-y-4 overflow-y-auto pr-2">
-        {desktopDestinationSuggestions.map((item) => {
-          const Icon = item.icon
-
-          return (
-            <button key={item.title} type="button" onClick={() => onSelect(item.title === 'Nearby' ? 'Dubai' : item.title)} className="flex w-full items-center gap-4 rounded-2xl text-left transition-colors hover:bg-gray-50">
-              <span className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl ${item.tone}`}>
-                <Icon className="h-6 w-6" strokeWidth={1.65} />
-              </span>
-              <span className="min-w-0">
-                <span className="block text-sm font-extrabold leading-tight text-gray-950">{item.title}</span>
-                <span className="mt-1 block truncate text-xs font-medium text-gray-500">{item.subtitle}</span>
-              </span>
-            </button>
-          )
-        })}
-      </div>
-    </div>
-  )
-}
-
-function MonthCalendar({ year, monthIndex, onSelect }) {
-  const days = buildCalendarDays(year, monthIndex)
-  const monthName = new Date(year, monthIndex, 1).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })
-
-  return (
-    <div className="min-w-0 flex-1">
-      <h3 className="mb-6 text-center text-xl font-extrabold text-gray-950">{monthName}</h3>
-      <div className="mb-4 grid grid-cols-7 text-center text-sm font-extrabold text-gray-500">
-        {calendarWeekdays.map((day, index) => <span key={`${day}-${index}`}>{day}</span>)}
-      </div>
-      <div className="grid grid-cols-7 gap-y-3 text-center">
-        {days.map((day, index) => (
-          <button
-            key={`${monthIndex}-${index}`}
-            type="button"
-            disabled={!day}
-            onClick={() => day && onSelect(`${monthName.split(' ')[0]} ${day}, ${year}`)}
-            className={`mx-auto flex h-9 w-9 items-center justify-center rounded-full text-base font-bold ${day ? 'text-gray-950 hover:bg-gray-100' : 'cursor-default text-transparent'}`}
-          >
-            {day || 0}
-          </button>
-        ))}
-      </div>
-    </div>
-  )
-}
-
-function DesktopDatePanel({ onSelect }) {
-  return (
-    <div className="w-[920px] max-w-[calc(100vw-48px)] rounded-[30px] bg-white p-8 shadow-[0_18px_54px_rgba(15,23,42,0.18)] ring-1 ring-black/[0.06]">
-      <div className="mx-auto mb-8 flex h-12 w-[360px] rounded-full bg-gray-100 p-1">
-        <button type="button" className="flex-1 rounded-full bg-white text-sm font-extrabold text-gray-950 shadow-sm">Dates</button>
-        <button type="button" className="flex-1 rounded-full text-sm font-extrabold text-gray-700">Flexible</button>
-      </div>
-      <div className="flex items-start gap-8">
-        <button type="button" aria-label="Previous month" className="mt-20 flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-gray-300">
-          <ChevronLeft className="h-5 w-5" strokeWidth={2} />
-        </button>
-        <MonthCalendar year={2026} monthIndex={5} onSelect={onSelect} />
-        <MonthCalendar year={2026} monthIndex={6} onSelect={onSelect} />
-        <button type="button" aria-label="Next month" className="mt-20 flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-gray-950 hover:bg-gray-100">
-          <ChevronRight className="h-5 w-5" strokeWidth={2} />
-        </button>
-      </div>
-      <div className="mt-8 flex flex-wrap gap-3">
-        {['Exact dates', '+ 1 day', '+ 2 days', '+ 3 days', '+ 7 days', '+ 14 days'].map((option) => (
-          <button key={option} type="button" onClick={() => onSelect(option)} className={`rounded-full px-5 py-3 text-sm font-bold ring-1 ${option === 'Exact dates' ? 'ring-gray-950 text-gray-950' : 'ring-gray-200 text-gray-700'}`}>
-            {option}
-          </button>
-        ))}
-      </div>
-    </div>
-  )
-}
-
-function DesktopTypePanel({ mode, onSelect }) {
-  const options = mode === 'venues'
-    ? desktopTypeSuggestions.filter((item) => ['Venues', 'Brunch', 'Nightlife'].includes(item.value))
-    : desktopTypeSuggestions
-
-  return (
-    <div className="w-[430px] max-w-[calc(100vw-48px)] rounded-[28px] bg-white p-6 shadow-[0_18px_54px_rgba(15,23,42,0.18)] ring-1 ring-black/[0.06]">
-      <p className="mb-4 text-sm font-semibold text-gray-950">{mode === 'venues' ? 'Choose a venue type' : 'Choose a category'}</p>
-      <div className="grid gap-3">
-        {options.map((item) => {
-          const Icon = item.icon
-
-          return (
-            <button key={item.value} type="button" onClick={() => onSelect(item.value)} className="flex items-center gap-3 rounded-2xl border border-gray-100 bg-white p-3 text-left shadow-sm transition-colors hover:bg-gray-50">
-              <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-brand-purple/10 text-brand-purple">
-                <Icon className="h-5 w-5" strokeWidth={1.8} />
-              </span>
-              <span className="text-sm font-extrabold text-gray-950">{item.label}</span>
-            </button>
-          )
-        })}
-      </div>
-    </div>
-  )
-}
-
-function DesktopGuestsPanel({ guests, onChange, onApply }) {
-  return (
-    <div className="w-[390px] max-w-[calc(100vw-48px)] rounded-[28px] bg-white p-6 shadow-[0_18px_54px_rgba(15,23,42,0.18)] ring-1 ring-black/[0.06]">
-      <div className="flex items-center justify-between gap-5">
-        <div>
-          <p className="text-base font-extrabold text-gray-950">Guests</p>
-          <p className="mt-1 text-sm font-medium text-gray-500">Add the expected party size</p>
-        </div>
-        <div className="flex items-center gap-3">
-          <button type="button" onClick={() => onChange(Math.max(0, guests - 1))} className="flex h-8 w-8 items-center justify-center rounded-full border border-gray-300 text-gray-600 disabled:opacity-40" disabled={guests === 0}>
-            <Minus className="h-4 w-4" strokeWidth={2} />
-          </button>
-          <span className="w-6 text-center text-base font-extrabold text-gray-950">{guests}</span>
-          <button type="button" onClick={() => onChange(guests + 1)} className="flex h-8 w-8 items-center justify-center rounded-full border border-gray-300 text-gray-900">
-            <Plus className="h-4 w-4" strokeWidth={2} />
-          </button>
-        </div>
-      </div>
-      <button type="button" onClick={() => onApply(guests)} className="mt-6 h-11 w-full rounded-full bg-brand-purple text-sm font-extrabold text-white shadow-[0_4px_12px_rgba(171,131,187,0.28)]">
-        Apply
-      </button>
-    </div>
-  )
-}
-
-export function SttDesktopSearchBar({ mode = 'events', searchTerm = '', onApplySearch, onOpenSearch, compact = false, className = '' }) {
-  const segments = getDesktopSearchSegments(mode, searchTerm)
-  const [activePanel, setActivePanel] = useState(null)
+export function SttDesktopSearchBar({ mode = 'events', searchTerm = '', recentSearches = emptySearchSuggestions, suggestedLocations = emptySearchSuggestions, categoryTiles: categoryTileSuggestions, onApplySearch, compact = false, className = '' }) {
+  const [isOpen, setIsOpen] = useState(false)
+  const [keyword, setKeyword] = useState(searchTerm || '')
+  const [location, setLocation] = useState('')
+  const [dateTime, setDateTime] = useState('')
+  const [category, setCategory] = useState('')
+  const [categoryTab, setCategoryTab] = useState('')
   const [guests, setGuests] = useState(0)
+  const [storedRecentSearches, setStoredRecentSearches] = useState([])
   const searchRef = useRef(null)
   const isCondensed = compact || mode === 'condensed'
+  const isVenuesMode = mode === 'venues'
+  const locationSuggestions = suggestedLocations.length > 0 ? suggestedLocations : fallbackLocationSuggestions
+  const categoryTiles = categoryTileSuggestions?.length
+    ? categoryTileSuggestions
+    : isVenuesMode
+      ? fallbackVenueCategoryTiles
+      : fallbackEventCategoryTiles
 
   useEffect(() => {
     const handlePointerDown = (event) => {
-      if (!searchRef.current?.contains(event.target)) setActivePanel(null)
+      if (!searchRef.current?.contains(event.target)) setIsOpen(false)
     }
 
     document.addEventListener('pointerdown', handlePointerDown)
     return () => document.removeEventListener('pointerdown', handlePointerDown)
   }, [])
 
-  const applyDesktopSearch = (payload = {}) => {
-    rememberRecentSearch(payload)
+  useEffect(() => {
+    setStoredRecentSearches(readRecentSearches())
+  }, [])
+
+  useEffect(() => {
+    setKeyword(searchTerm || '')
+  }, [searchTerm])
+
+  const openDropdown = () => {
+    setStoredRecentSearches(readRecentSearches())
+    setIsOpen(true)
+  }
+
+  const applyDesktopSearch = (overrides = {}) => {
+    const payload = {
+      keyword: overrides.keyword ?? keyword,
+      location: overrides.location ?? location,
+      dateTime: overrides.dateTime ?? dateTime,
+      category: overrides.category ?? category,
+      tab: overrides.tab ?? categoryTab,
+      guests: overrides.guests ?? (guests ? String(guests) : ''),
+    }
+
+    setStoredRecentSearches(rememberRecentSearch(payload))
     onApplySearch?.(payload)
-    setActivePanel(null)
+    setIsOpen(false)
   }
-
-  if (onOpenSearch) {
-    const label = searchTerm?.trim() || (mode === 'venues' ? 'Search venues or locations' : 'Search venues, events, experiences')
-
-    return (
-      <button
-        type="button"
-        onClick={onOpenSearch}
-        className={`relative mx-auto flex items-center rounded-full bg-white p-2 text-left shadow-[0_6px_24px_rgba(15,23,42,0.12)] ring-1 ring-black/[0.08] transition hover:shadow-[0_8px_28px_rgba(15,23,42,0.14)] ${isCondensed ? 'h-[52px] w-[520px] max-w-full' : 'mt-7 h-[60px] w-full max-w-[680px]'} ${className}`}
-      >
-        <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-gray-50 text-gray-600">
-          <Search className="h-4 w-4" strokeWidth={2.2} />
-        </span>
-        <span className="ml-3 min-w-0 flex-1 truncate text-sm font-semibold text-gray-700">{label}</span>
-        <span className="ml-3 flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-brand-purple text-white shadow-[0_4px_12px_rgba(171,131,187,0.34)]">
-          <Search className="h-4 w-4" strokeWidth={2.2} />
-        </span>
-      </button>
-    )
+  const clearSelections = () => {
+    setKeyword('')
+    setLocation('')
+    setDateTime('')
+    setCategory('')
+    setCategoryTab('')
+    setGuests(0)
   }
+  const clearRecentSearches = () => {
+    setStoredRecentSearches(writeRecentSearches([]))
+  }
+  const displayPlaceholder = isVenuesMode ? 'Search venues or locations' : 'Search venues, events, experiences'
+  const selectedFilters = [
+    location,
+    dateTime,
+    category,
+    guests ? `${guests} guests` : '',
+  ].filter(Boolean)
+  const querySuggestionItems = filterSuggestionItems([
+    ...storedRecentSearches.map((item) => ({ label: item.label, meta: 'Recent search', payload: item, icon: Search })),
+    ...recentSearches.map((item) => ({ label: item, meta: 'Suggested search', payload: { keyword: item }, icon: Search })),
+    ...locationSuggestions.map((item) => ({ label: item, meta: 'Location', payload: { keyword: item, location: item }, icon: MapPin })),
+    ...categoryTiles.map((tile) => ({ label: tile.label, meta: 'Category', payload: { keyword: tile.label, category: tile.label, tab: tile.tab }, icon: tile.icon || Search })),
+  ], keyword, 7)
+  const showQuerySuggestions = keyword.trim().length > 0
+  const visibleLocations = filterTextSuggestions(locationSuggestions, keyword, 8)
 
   return (
     <form
       ref={searchRef}
       onSubmit={(event) => {
         event.preventDefault()
-        if (activePanel) {
-          applyDesktopSearch()
-        } else {
-          setActivePanel('where')
-        }
+        applyDesktopSearch()
       }}
-      className={`relative mx-auto flex items-center rounded-full bg-white p-2 shadow-[0_6px_24px_rgba(15,23,42,0.12)] ring-1 ring-black/[0.08] ${isCondensed ? 'h-[52px] w-[520px] max-w-full' : 'mt-7 h-[64px] max-w-[900px]'} ${className}`}
+      className={`relative mx-auto ${isCondensed ? 'w-[520px] max-w-full' : 'mt-7 w-full max-w-[720px]'} ${className}`}
     >
-      {segments.map((segment, index) => (
-        <div key={segment.label} className="flex min-w-0 flex-1 items-center">
-          <button
-            type="button"
-            onClick={() => setActivePanel((current) => (current === segment.panel ? null : segment.panel))}
-            className={`flex min-w-0 flex-1 justify-center rounded-full px-5 text-left transition-all ${isCondensed ? 'h-10 flex-row items-center gap-2' : 'h-12 flex-col'} ${activePanel === segment.panel ? 'bg-white shadow-[0_3px_16px_rgba(15,23,42,0.13)]' : 'hover:bg-gray-50'}`}
-          >
-            {isCondensed && index === 0 && <Building2 className="h-5 w-5 shrink-0 text-brand-purple" strokeWidth={1.8} />}
-            <span className={`${isCondensed ? 'truncate text-sm font-extrabold text-gray-950' : 'text-[11px] font-extrabold leading-none text-gray-950'}`}>{isCondensed ? segment.value : segment.label}</span>
-            {!isCondensed && (
-              <span className={`mt-1 truncate text-sm leading-none ${index === 0 && searchTerm ? 'font-semibold text-gray-950' : 'font-medium text-gray-500'}`}>
-                {segment.value}
-              </span>
-            )}
-          </button>
-          {index < segments.length - 1 && <span className="h-8 w-px shrink-0 bg-gray-200" />}
-        </div>
-      ))}
-      <button type="submit" aria-label="Search" className={`ml-1 flex shrink-0 items-center justify-center rounded-full bg-brand-purple text-white shadow-[0_4px_12px_rgba(171,131,187,0.34)] transition-transform hover:scale-[1.02] ${isCondensed ? 'h-10 w-10' : 'h-12 w-12'}`}>
-        <Search className={isCondensed ? 'h-4 w-4' : 'h-5 w-5'} strokeWidth={2.2} />
-      </button>
+      <div className={`flex items-center rounded-full bg-white p-2 shadow-[0_6px_24px_rgba(15,23,42,0.12)] ring-1 ring-black/[0.08] transition-shadow ${isOpen ? 'shadow-[0_10px_30px_rgba(15,23,42,0.14)] ring-brand-purple/25' : ''} ${isCondensed ? 'h-[52px]' : 'h-[62px]'}`}>
+        <label className="flex min-w-0 flex-1 items-center gap-3 px-3 text-gray-500">
+          <Search className="h-5 w-5 shrink-0 text-brand-purple" strokeWidth={2} />
+          <input
+            value={keyword}
+            onChange={(event) => {
+              setKeyword(event.target.value)
+              openDropdown()
+            }}
+            onFocus={openDropdown}
+            placeholder={displayPlaceholder}
+            autoComplete="off"
+            aria-expanded={isOpen}
+            className="w-0 min-w-0 flex-1 bg-transparent text-sm font-semibold text-gray-950 outline-none placeholder:text-gray-400"
+          />
+        </label>
+        {selectedFilters.length > 0 && (
+          <span className="hidden max-w-[230px] truncate rounded-full bg-gray-50 px-3 py-2 text-xs font-semibold text-gray-600 lg:inline">
+            {selectedFilters.join(' | ')}
+          </span>
+        )}
+        <button type="submit" aria-label="Search" className={`ml-2 flex shrink-0 items-center justify-center rounded-full bg-brand-purple text-white shadow-[0_4px_12px_rgba(171,131,187,0.34)] transition-transform hover:scale-[1.02] ${isCondensed ? 'h-10 w-10' : 'h-12 w-12'}`}>
+          <Search className={isCondensed ? 'h-4 w-4' : 'h-5 w-5'} strokeWidth={2.2} />
+        </button>
+      </div>
 
-      {activePanel && (
-        <div className={`absolute z-[75] animate-in fade-in slide-in-from-top-2 duration-200 ${isCondensed ? 'left-1/2 top-[64px] -translate-x-1/2' : activePanel === 'where' ? 'left-0 top-[76px]' : activePanel === 'when' ? 'left-1/2 top-[76px] -translate-x-1/2' : 'right-0 top-[76px]'}`}>
-          {activePanel === 'where' && <DesktopWherePanel onSelect={(location) => applyDesktopSearch({ location, keyword: location })} />}
-          {activePanel === 'when' && <DesktopDatePanel onSelect={(dateTime) => applyDesktopSearch({ dateTime, keyword: dateTime })} />}
-          {activePanel === 'type' && <DesktopTypePanel mode={mode} onSelect={(category) => applyDesktopSearch({ category, keyword: category })} />}
-          {activePanel === 'guests' && <DesktopGuestsPanel guests={guests} onChange={setGuests} onApply={(guestCount) => applyDesktopSearch({ guests: guestCount, keyword: guestCount ? `${guestCount} guests` : '' })} />}
+      {isOpen && (
+        <div className={`absolute left-1/2 z-[75] max-h-[min(680px,calc(100vh-120px))] w-[min(760px,calc(100vw-48px))] -translate-x-1/2 overflow-y-auto rounded-[28px] bg-white p-6 shadow-[0_18px_54px_rgba(15,23,42,0.18)] ring-1 ring-black/[0.06] animate-in fade-in slide-in-from-top-2 duration-200 ${isCondensed ? 'top-[64px]' : 'top-[76px]'}`}>
+          {showQuerySuggestions && (
+            <section>
+              <p className="mb-3 text-sm font-semibold text-gray-950">Suggestions</p>
+              <div className="space-y-1">
+                {querySuggestionItems.length > 0 ? querySuggestionItems.map((item) => {
+                  const Icon = item.icon || Search
+
+                  return (
+                    <button key={`${item.meta}-${item.label}`} type="button" onClick={() => applyDesktopSearch(item.payload || { keyword: item.label })} className="flex w-full items-center gap-3 rounded-2xl px-2 py-2.5 text-left transition-colors hover:bg-gray-50">
+                      <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-brand-purple/10 text-brand-purple">
+                        <Icon className="h-4 w-4" strokeWidth={1.85} />
+                      </span>
+                      <span className="min-w-0">
+                        <span className="block truncate text-sm font-semibold leading-tight text-gray-950">{item.label}</span>
+                        <span className="mt-0.5 block truncate text-xs font-semibold text-gray-500">{item.meta}</span>
+                      </span>
+                    </button>
+                  )
+                }) : (
+                  <button type="button" onClick={() => applyDesktopSearch({ keyword })} className="flex w-full items-center gap-3 rounded-2xl px-2 py-3 text-left transition-colors hover:bg-gray-50">
+                    <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-gray-100 text-gray-600">
+                      <Search className="h-4 w-4" strokeWidth={2} />
+                    </span>
+                    <span className="min-w-0">
+                      <span className="block truncate text-sm font-semibold text-gray-950">Search for "{keyword}"</span>
+                      <span className="mt-0.5 block text-xs font-semibold text-gray-500">Use this keyword</span>
+                    </span>
+                  </button>
+                )}
+              </div>
+            </section>
+          )}
+
+          {!showQuerySuggestions && storedRecentSearches.length > 0 && (
+            <section>
+              <div className="mb-3 flex items-center justify-between gap-3">
+                <p className="text-sm font-semibold text-gray-950">Recent searches</p>
+                <button type="button" onClick={clearRecentSearches} className="text-xs font-semibold text-brand-purple">Clear</button>
+              </div>
+              <div className="grid gap-2 sm:grid-cols-2">
+                {storedRecentSearches.slice(0, 4).map((item) => (
+                  <button key={`${item.id}-${item.createdAt}`} type="button" onClick={() => applyDesktopSearch(item)} className="flex min-w-0 items-center gap-3 rounded-2xl border border-gray-100 bg-white px-3 py-3 text-left shadow-sm transition-colors hover:bg-gray-50">
+                    <Search className="h-4 w-4 shrink-0 text-brand-purple" strokeWidth={2} />
+                    <span className="min-w-0">
+                      <span className="block truncate text-sm font-semibold text-gray-950">{item.label}</span>
+                      {item.location && item.keyword !== item.location && <span className="mt-0.5 block truncate text-xs font-semibold text-gray-500">{item.location}</span>}
+                    </span>
+                  </button>
+                ))}
+              </div>
+            </section>
+          )}
+
+          <div className="mt-6 grid gap-6 lg:grid-cols-[1.15fr_0.85fr]">
+            <div className="space-y-6">
+              <section>
+                <p className="mb-3 text-sm font-semibold text-gray-950">Locations</p>
+                <div className="flex flex-wrap gap-2">
+                  {visibleLocations.map((item) => (
+                    <button key={item} type="button" onClick={() => setLocation((current) => current === item ? '' : item)} className={`rounded-full px-3 py-2 text-xs font-semibold ring-1 transition ${location === item ? 'bg-brand-purple text-white ring-brand-purple' : 'bg-white text-gray-800 ring-gray-200 hover:bg-gray-50'}`}>
+                      {item}
+                    </button>
+                  ))}
+                </div>
+              </section>
+
+              {!isVenuesMode && (
+                <section>
+                  <p className="mb-3 text-sm font-semibold text-gray-950">Date & time</p>
+                  <div className="flex flex-wrap gap-2">
+                    {dateTimeOptions.map((item) => (
+                      <button key={item} type="button" onClick={() => setDateTime((current) => current === item ? '' : item)} className={`rounded-full px-3 py-2 text-xs font-semibold ring-1 transition ${dateTime === item ? 'bg-brand-purple text-white ring-brand-purple' : 'bg-white text-gray-800 ring-gray-200 hover:bg-gray-50'}`}>
+                        {item}
+                      </button>
+                    ))}
+                  </div>
+                </section>
+              )}
+
+              <section>
+                <p className="mb-3 text-sm font-semibold text-gray-950">{isVenuesMode ? 'Venue categories' : 'Categories'}</p>
+                <div className="grid gap-2 sm:grid-cols-2">
+                  {categoryTiles.map((tile) => {
+                    const Icon = tile.icon || Search
+                    const selected = category === tile.label
+
+                    return (
+                      <button
+                        key={tile.label}
+                        type="button"
+                        onClick={() => {
+                          setCategory(selected ? '' : tile.label)
+                          setCategoryTab(selected ? '' : tile.tab || '')
+                        }}
+                        className={`flex min-w-0 items-center gap-3 rounded-2xl border px-3 py-3 text-left transition ${selected ? 'border-brand-purple bg-brand-purple/10' : 'border-gray-100 bg-white hover:bg-gray-50'}`}
+                      >
+                        <span className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl ${selected ? 'bg-brand-purple text-white' : 'bg-brand-purple/10 text-brand-purple'}`}>
+                          <Icon className="h-4 w-4" strokeWidth={1.85} />
+                        </span>
+                        <span className="truncate text-sm font-semibold text-gray-950">{tile.label}</span>
+                      </button>
+                    )
+                  })}
+                </div>
+              </section>
+            </div>
+
+            <div className="space-y-6">
+              <section>
+                <p className="mb-3 text-sm font-semibold text-gray-950">Popular destinations</p>
+                <div className="space-y-1">
+                  {desktopDestinationSuggestions.slice(0, 4).map((item) => {
+                    const Icon = item.icon
+                    const value = item.title === 'Nearby' ? 'Dubai' : item.title
+
+                    return (
+                      <button key={item.title} type="button" onClick={() => setLocation(value)} className="flex w-full items-center gap-3 rounded-2xl px-2 py-2.5 text-left transition-colors hover:bg-gray-50">
+                        <span className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl ${item.tone}`}>
+                          <Icon className="h-5 w-5" strokeWidth={1.65} />
+                        </span>
+                        <span className="min-w-0">
+                          <span className="block text-sm font-semibold leading-tight text-gray-950">{item.title}</span>
+                          <span className="mt-0.5 block truncate text-xs font-semibold text-gray-500">{item.subtitle}</span>
+                        </span>
+                      </button>
+                    )
+                  })}
+                </div>
+              </section>
+
+              <section className="rounded-2xl bg-gray-50 p-4">
+                <div className="flex items-center justify-between gap-4">
+                  <div>
+                    <p className="text-sm font-semibold text-gray-950">Guests</p>
+                    <p className="mt-0.5 text-xs font-semibold text-gray-500">Optional party size</p>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <button type="button" onClick={() => setGuests((current) => Math.max(0, current - 1))} disabled={guests === 0} className="flex h-8 w-8 items-center justify-center rounded-full border border-gray-300 text-gray-600 disabled:opacity-40">
+                      <Minus className="h-4 w-4" strokeWidth={2} />
+                    </button>
+                    <span className="w-6 text-center text-base font-semibold text-gray-950">{guests}</span>
+                    <button type="button" onClick={() => setGuests((current) => current + 1)} className="flex h-8 w-8 items-center justify-center rounded-full border border-gray-300 text-gray-900">
+                      <Plus className="h-4 w-4" strokeWidth={2} />
+                    </button>
+                  </div>
+                </div>
+              </section>
+
+              <div className="flex items-center justify-end gap-2">
+                <button type="button" onClick={clearSelections} className="h-10 rounded-full px-4 text-xs font-semibold text-gray-600 transition hover:bg-gray-50">Clear</button>
+                <button type="submit" className="h-10 rounded-full bg-brand-purple px-5 text-xs font-semibold text-white shadow-[0_4px_12px_rgba(171,131,187,0.28)]">Search</button>
+              </div>
+            </div>
+          </div>
         </div>
       )}
     </form>
@@ -585,10 +583,10 @@ export function SttSearchOverlay({
   const showLocationSuggestions = activeField === 'location' && locationSuggestions.length > 0
 
   return (
-    <div className="fixed inset-0 z-[70] overflow-x-hidden bg-white md:bg-gray-950/25 md:px-5 md:py-10" role="dialog" aria-modal="true" aria-label="Search">
+    <div className="fixed inset-0 z-[70] overflow-x-hidden bg-white md:hidden" role="dialog" aria-modal="true" aria-label="Search">
       <div className="min-h-full w-full max-w-full overflow-x-hidden bg-white px-7 pb-10 pt-16 md:mx-auto md:min-h-0 md:max-w-[440px] md:rounded-[28px] md:px-8 md:shadow-[0_24px_70px_rgba(15,23,42,0.22)]">
         <div className="mb-5 flex items-center justify-between">
-          <h2 className="text-xl font-extrabold text-gray-950">Search</h2>
+          <h2 className="text-xl font-semibold text-gray-950">Search</h2>
           <button type="button" onClick={onClose} aria-label="Close search" className="flex h-9 w-9 items-center justify-center rounded-full bg-gray-50 text-gray-600">
             <X className="h-4 w-4" strokeWidth={2} />
           </button>
@@ -641,7 +639,7 @@ export function SttSearchOverlay({
             />
           </SearchField>
           {!isVenuesMode && <SearchField icon={Clock} placeholder="Date & Time" value={dateTime} onChange={setDateTime} onFocus={() => setActiveField('dateTime')} />}
-          <button type="submit" className="mt-2 h-11 w-full rounded-full bg-brand-purple text-sm font-extrabold text-white shadow-[0_4px_14px_rgba(15,23,42,0.14)]">
+          <button type="submit" className="mt-2 h-11 w-full rounded-full bg-brand-purple text-sm font-semibold text-white shadow-[0_4px_14px_rgba(15,23,42,0.14)]">
             Search
           </button>
         </form>
@@ -649,8 +647,8 @@ export function SttSearchOverlay({
         {storedRecentSearches.length > 0 && (
           <section className="mt-8">
             <div className="flex items-center justify-between gap-3">
-              <h3 className="text-base font-extrabold text-gray-950">Recent Searches</h3>
-              <button type="button" onClick={clearRecentSearches} className="text-xs font-bold text-brand-purple">Clear</button>
+              <h3 className="text-base font-semibold text-gray-950">Recent Searches</h3>
+              <button type="button" onClick={clearRecentSearches} className="text-xs font-semibold text-brand-purple">Clear</button>
             </div>
             <div className="mt-4 space-y-4">
               {storedRecentSearches.map((item) => (
@@ -658,7 +656,7 @@ export function SttSearchOverlay({
                   <Search className="h-5 w-5 text-brand-purple" strokeWidth={2} />
                   <span className="min-w-0">
                     <span className="block truncate text-sm font-semibold text-gray-950">{item.label}</span>
-                    {item.location && item.keyword !== item.location && <span className="mt-0.5 block truncate text-xs font-medium text-gray-500">{item.location}</span>}
+                    {item.location && item.keyword !== item.location && <span className="mt-0.5 block truncate text-xs font-semibold text-gray-500">{item.location}</span>}
                   </span>
                 </button>
               ))}
@@ -668,10 +666,10 @@ export function SttSearchOverlay({
 
         {locationSuggestions.length > 0 && (
           <section className="mt-8">
-            <h3 className="text-base font-extrabold text-gray-950">Suggested Locations</h3>
+              <h3 className="text-base font-semibold text-gray-950">Suggested Locations</h3>
             <div className="mt-4 flex flex-wrap gap-2">
               {locationSuggestions.map((item) => (
-                <button key={item} type="button" onClick={() => applySearch({ keyword: item, location: item })} className="rounded-full border border-brand-purple/15 bg-brand-purple/5 px-3 py-2 text-xs font-bold text-gray-800 shadow-sm">
+                <button key={item} type="button" onClick={() => applySearch({ keyword: item, location: item })} className="rounded-full border border-brand-purple/15 bg-brand-purple/5 px-3 py-2 text-xs font-semibold text-gray-800 shadow-sm">
                   {item}
                 </button>
               ))}
@@ -681,10 +679,10 @@ export function SttSearchOverlay({
 
         {!isVenuesMode && (
           <section className="mt-8">
-            <h3 className="text-base font-extrabold text-gray-950">Date & Time</h3>
+            <h3 className="text-base font-semibold text-gray-950">Date & Time</h3>
             <div className="mt-4 flex flex-wrap gap-2">
               {dateTimeOptions.map((item) => (
-                <button key={item} type="button" onClick={() => setDateTime(item)} className={`rounded-full px-3 py-2 text-xs font-bold shadow-sm ${dateTime === item ? 'bg-brand-purple text-white' : 'border border-gray-200 bg-white text-gray-700'}`}>
+                <button key={item} type="button" onClick={() => setDateTime(item)} className={`rounded-full px-3 py-2 text-xs font-semibold shadow-sm ${dateTime === item ? 'bg-brand-purple text-white' : 'border border-gray-200 bg-white text-gray-700'}`}>
                   {item}
                 </button>
               ))}
@@ -694,7 +692,7 @@ export function SttSearchOverlay({
 
         {categoryTiles.length > 0 && (
           <section className="mt-8">
-            <h3 className="text-base font-extrabold text-gray-950">{isVenuesMode ? 'Venue Categories' : 'Top Categories'}</h3>
+            <h3 className="text-base font-semibold text-gray-950">{isVenuesMode ? 'Venue Categories' : 'Top Categories'}</h3>
             <div className="mt-4 grid grid-cols-2 gap-3">
               {categoryTiles.map((tile) => {
                 const Icon = tile.icon
@@ -702,7 +700,7 @@ export function SttSearchOverlay({
                 return (
                   <button key={tile.label} type="button" onClick={() => applySearch({ category: tile.label, keyword: tile.label, tab: tile.tab })} className="flex h-[90px] flex-col items-center justify-center gap-2 rounded-[14px] bg-white text-center shadow-[0_2px_12px_rgba(15,23,42,0.11)] ring-1 ring-black/5">
                     <Icon className="h-8 w-8 text-brand-purple" strokeWidth={1.8} />
-                    <span className="text-sm font-bold text-gray-950">{tile.label}</span>
+                    <span className="text-sm font-semibold text-gray-950">{tile.label}</span>
                   </button>
                 )
               })}
@@ -744,7 +742,7 @@ export function SttPageHeader({
   }
 
   return (
-    <section className="mx-auto w-full max-w-[100vw] px-5 pt-5 md:max-w-6xl md:px-8 md:pt-7">
+    <section className="mx-auto w-full max-w-[100vw] px-5 pt-5 md:max-w-none md:bg-[#f8f8f8]/95 md:px-8 md:py-5 md:shadow-[0_4px_22px_rgba(52,52,52,0.10)]">
       <SttSearchOverlay
         open={searchOpen}
         mode={mode}
@@ -778,7 +776,7 @@ export function SttPageHeader({
       </div>
 
       <div className="hidden md:block">
-        <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-6">
+        <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-10">
           <Link to="/" className="flex items-center">
             <img src={sttLogo} alt="Set The Table" className="h-12 w-auto object-contain" style={brandLogoFilter} />
           </Link>
@@ -797,7 +795,14 @@ export function SttPageHeader({
           </div>
         </div>
 
-        <SttDesktopSearchBar mode={mode} searchTerm={searchTerm} onApplySearch={handleApplySearch} onOpenSearch={() => setSearchOpen(true)} />
+        <SttDesktopSearchBar
+          mode={mode}
+          searchTerm={searchTerm}
+          recentSearches={recentSearches}
+          suggestedLocations={suggestedLocations}
+          categoryTiles={categoryTiles}
+          onApplySearch={handleApplySearch}
+        />
       </div>
     </section>
   )
@@ -806,7 +811,7 @@ export function SttPageHeader({
 export function SttSectionHeader({ title, actionTo }) {
   return (
     <div className="mb-3 flex items-center justify-between">
-      <h2 className="text-[20px] font-extrabold tracking-tight text-gray-950 md:text-[22px]">{title}</h2>
+      <h2 className="text-[17px] font-semibold tracking-tight text-gray-950">{title}</h2>
       {actionTo && (
         <Link to={actionTo} aria-label={`See all ${title}`} className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-gray-100 text-gray-700 transition-colors hover:bg-gray-200">
           <ChevronRight className="h-4 w-4" strokeWidth={2.2} />
@@ -842,7 +847,7 @@ export function SttEventTile({ event, badge = 'Featured' }) {
   const categoryLabel = event.category || event.type || 'Event'
 
   return (
-    <Link to={`/events/${event.id}`} className="block min-w-0">
+    <Link to={getEventHref(event)} className="block min-w-0">
       <article className="group">
         <div className="relative aspect-[1.48] overflow-hidden rounded-[14px] bg-gray-100 shadow-[0_2px_10px_rgba(15,23,42,0.08)] ring-1 ring-black/[0.04] transition-shadow group-hover:shadow-[0_5px_18px_rgba(15,23,42,0.10)]">
           {event.image ? (
@@ -859,7 +864,7 @@ export function SttEventTile({ event, badge = 'Featured' }) {
         </div>
         <div className="flex min-h-[84px] flex-col pt-1.5">
           <div className="flex items-start justify-between gap-2">
-            <h3 className="line-clamp-2 text-[12px] font-semibold leading-tight text-gray-950 md:text-[13px]">{event.title}</h3>
+            <h3 className="line-clamp-2 pl-1 text-[13px] font-medium leading-tight text-gray-950">{event.title}</h3>
             <div className="shrink-0 text-right">
               {event.price !== null && event.price !== undefined ? (
                 <>
@@ -872,15 +877,15 @@ export function SttEventTile({ event, badge = 'Featured' }) {
             </div>
           </div>
           <div className="mt-1 space-y-0.5">
-            <p className="flex items-center gap-1 truncate text-[9px] font-medium text-gray-500 md:text-xs">
+            <p className="flex items-center gap-1 truncate text-[11px] font-normal text-gray-500">
               <MapPin className="h-3 w-3 shrink-0 text-gray-400" strokeWidth={1.8} />
               <span className="truncate">{event.venue}</span>
             </p>
-            <p className="truncate text-[9px] text-gray-400 md:text-xs">{getEventAddress(event)}</p>
+            <p className="truncate pl-1 text-[11px] font-normal text-gray-400">{getEventAddress(event)}</p>
           </div>
           <div className="mt-auto flex min-h-[20px] flex-wrap gap-1.5 pt-1.5">
-            <span className={`rounded-full px-2 py-1 text-[8px] font-semibold uppercase leading-none ring-1 md:text-[9px] ${getCategoryPillClassName(categoryLabel)}`}>{categoryLabel}</span>
-            <span className={`rounded-full px-2 py-1 text-[8px] font-semibold uppercase leading-none ring-1 md:text-[9px] ${dayPillClassName}`}>{dayLabel}</span>
+            <span className={`rounded-full px-2 py-1 text-[9px] font-normal uppercase leading-none ring-1 ${getCategoryPillClassName(categoryLabel)}`}>{categoryLabel}</span>
+            <span className={`rounded-full px-2 py-1 text-[9px] font-normal uppercase leading-none ring-1 ${dayPillClassName}`}>{dayLabel}</span>
           </div>
         </div>
       </article>
@@ -894,7 +899,7 @@ export function SttVenueTile({ venue, badge = 'Featured' }) {
   return (
     <Link to={`/venues/${venue.id}`} className="block min-w-0">
       <article className="group">
-        <div className="relative aspect-[1.22] overflow-hidden rounded-[14px] bg-gray-100 shadow-[0_2px_10px_rgba(15,23,42,0.08)] ring-1 ring-black/[0.04] transition-shadow group-hover:shadow-[0_5px_18px_rgba(15,23,42,0.10)]">
+        <div className="relative aspect-[1.22] overflow-hidden rounded-lg bg-gray-100 shadow-[0_2px_10px_rgba(15,23,42,0.08)] ring-1 ring-black/[0.04] transition-shadow group-hover:shadow-[0_5px_18px_rgba(15,23,42,0.10)]">
           {venue.image ? (
             <img src={venue.image} alt={venue.name} className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.03]" />
           ) : (
@@ -906,13 +911,13 @@ export function SttVenueTile({ venue, badge = 'Featured' }) {
           </button>
         </div>
         <div className="flex min-h-[70px] flex-col pt-1.5">
-          <h3 className="line-clamp-2 text-[12px] font-semibold leading-tight text-gray-950 md:text-[13px]">{venue.name}</h3>
-          <div className="mt-1 flex min-h-[18px] items-center gap-1 truncate text-[9px] text-gray-500 md:text-xs">
+          <h3 className="line-clamp-2 pl-1 text-[13px] font-medium leading-tight text-gray-950">{venue.name}</h3>
+          <div className="mt-1 flex min-h-[18px] items-center gap-1 truncate text-[11px] font-normal text-gray-500">
             <MapPin className="h-3 w-3 shrink-0 text-gray-400" strokeWidth={1.8} />
             <span className="truncate">{venue.location || venue.address}</span>
           </div>
           <div className="mt-auto flex pt-1.5">
-            <span className={`w-fit rounded-full px-2 py-1 text-[8px] font-semibold uppercase leading-none ring-1 md:text-[9px] ${getCategoryPillClassName(categoryLabel)}`}>{categoryLabel}</span>
+            <span className={`w-fit rounded-full px-2 py-1 text-[9px] font-normal uppercase leading-none ring-1 ${getCategoryPillClassName(categoryLabel)}`}>{categoryLabel}</span>
           </div>
         </div>
       </article>

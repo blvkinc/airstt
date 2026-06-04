@@ -33,7 +33,9 @@ const Navbar = () => {
   const navigate = useNavigate()
   const { isAuthenticated } = useAuth()
   const usesDiscoveryHeader = discoveryPaths.includes(location.pathname)
-  const hideMobileTopHeader = location.pathname === '/profile'
+  const isEventDetailRoute = location.pathname.startsWith('/events/')
+  const hideMobileTopHeader = location.pathname === '/profile' || isEventDetailRoute
+  const hideMobileBottomNav = isEventDetailRoute
   const mobileSearchOpen = location.pathname === '/map' || ((location.pathname === '/' || location.pathname === '/index.html') && new URLSearchParams(location.search).get('search') === 'open')
   const profileHref = isAuthenticated ? '/profile' : '/auth?redirect=%2Fprofile'
   const bookingsHref = isAuthenticated ? '/profile?tab=bookings' : '/auth?redirect=%2Fprofile%3Ftab%3Dbookings'
@@ -57,12 +59,12 @@ const Navbar = () => {
               key={item.label}
               to={item.href}
               className={cn(
-                'flex min-h-[44px] min-w-0 flex-col items-center justify-center gap-0.5 rounded-xl px-1 text-center text-[10px] font-semibold transition-colors',
+                'flex min-h-[44px] min-w-0 items-center justify-center rounded-xl px-1 text-center transition-colors',
                 item.active ? 'text-gray-950' : 'text-gray-500 hover:bg-white/55 hover:text-gray-950',
               )}
+              aria-label={item.label}
             >
-              <Icon strokeWidth={1.85} className={cn('h-4 w-4', item.active ? 'fill-gray-950/5' : '')} />
-              <span className="w-full truncate leading-tight">{item.label}</span>
+              <Icon strokeWidth={1.85} className={cn('h-5 w-5', item.active ? 'fill-gray-950/5' : '')} />
             </Link>
           )
         })}
@@ -87,14 +89,14 @@ const Navbar = () => {
         initial={{ y: -16, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
         transition={{ duration: 0.28, ease: 'easeOut' }}
-        className="fixed left-0 top-0 z-50 w-screen max-w-[100vw] overflow-hidden border-b border-gray-100 bg-white/95 shadow-[0_2px_14px_rgba(15,23,42,0.06)] backdrop-blur-xl"
+        className="fixed left-0 top-0 z-50 w-screen max-w-[100vw] overflow-visible border-b border-gray-200 bg-[#f8f8f8]/95 shadow-[0_4px_22px_rgba(52,52,52,0.10)] backdrop-blur-xl"
       >
-        <div className="mx-auto hidden h-[86px] max-w-[1440px] grid-cols-[1fr_auto_1fr] items-center gap-8 px-10 md:grid">
+        <div className="hidden h-[86px] w-full grid-cols-[1fr_auto_1fr] items-center gap-10 px-6 md:grid lg:px-8">
           <Link to="/" className="flex items-center">
             <img src={sttLogo} alt="Set The Table" className="h-12 w-auto object-contain" style={brandLogoFilter} />
           </Link>
 
-          <SttDesktopSearchBar mode="condensed" compact onApplySearch={handleApplySearch} onOpenSearch={() => setSearchOpen(true)} />
+          <SttDesktopSearchBar mode="condensed" compact onApplySearch={handleApplySearch} />
 
           <div className="flex items-center justify-end gap-5 text-brand-purple">
             <Link to="/venues" className="text-[11px] font-extrabold uppercase tracking-[0.32em] text-gray-700">List a Venue</Link>
@@ -124,7 +126,7 @@ const Navbar = () => {
       )}
       </motion.header>
 
-      {mobileBottomNav}
+      {!hideMobileBottomNav && mobileBottomNav}
     </>
   )
 }

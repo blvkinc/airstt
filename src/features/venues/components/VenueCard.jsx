@@ -19,7 +19,7 @@ const VenueCard = ({ venue, viewMode = 'grid' }) => {
     return (
       <Link to={`/venues/${safeVenue.id}`} className="group block">
         <motion.div
-          className="rounded-xl border border-gray-100 bg-white shadow-md hover:shadow-xl transition-all duration-300 overflow-hidden"
+          className="overflow-hidden rounded-lg border border-gray-100 bg-white shadow-md transition-all duration-300 hover:shadow-xl"
           whileHover={{ y: -4 }}
         >
           <div className="flex flex-col md:flex-row overflow-hidden">
@@ -30,7 +30,7 @@ const VenueCard = ({ venue, viewMode = 'grid' }) => {
                 className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
               />
               <div className="absolute top-3 left-3">
-                <Badge className="gradient-brand text-white border-0 shadow-sm px-3 py-1 text-xs font-semibold rounded-full">
+                <Badge className="border-0 bg-brand-green px-3 py-1 text-[9px] font-normal uppercase text-white shadow-sm">
                   {safeVenue.category}
                 </Badge>
               </div>
@@ -39,7 +39,7 @@ const VenueCard = ({ venue, viewMode = 'grid' }) => {
             <div className="flex-1 p-5 flex flex-col justify-between">
               <div>
                 <div className="flex justify-between items-start mb-2">
-                  <h3 className="font-bold text-xl text-gray-900 group-hover:text-gray-700 transition-colors">
+                  <h3 className="pl-1 text-[13px] font-medium leading-tight text-brand-black transition-colors group-hover:text-gray-700">
                     {safeVenue.name}
                   </h3>
                   <div className="flex items-center gap-1 bg-gray-50 px-2 py-1 rounded-full">
@@ -53,7 +53,7 @@ const VenueCard = ({ venue, viewMode = 'grid' }) => {
 
                 <div className="flex flex-wrap gap-2 mb-4">
                   {safeVenue.venueTypes?.slice(0, 3).map((venueType) => (
-                    <span key={venueType.id || venueType.slug || venueType.name} className="text-xs text-brand-purple bg-brand-purple/10 px-2 py-1 rounded-full">
+                    <span key={venueType.id || venueType.slug || venueType.name} className="rounded-full bg-brand-green px-2 py-1 text-[9px] font-normal text-white">
                       {venueType.name}
                     </span>
                   ))}
@@ -65,7 +65,7 @@ const VenueCard = ({ venue, viewMode = 'grid' }) => {
                 </div>
               </div>
 
-              <div className="flex items-center gap-4 text-sm text-gray-500 pt-4 border-t border-gray-100">
+              <div className="flex items-center gap-4 border-t border-gray-100 pt-4 text-[11px] font-normal text-gray-500">
                 <div className="flex items-center gap-1">
                   <MapPin strokeWidth={1.5} className="w-4 h-4" />
                   {safeVenue.address}
@@ -87,7 +87,7 @@ const VenueCard = ({ venue, viewMode = 'grid' }) => {
   return (
     <Link to={`/venues/${safeVenue.id}`} className="group block h-full">
       <motion.div
-        className="rounded-xl h-full border border-gray-100 bg-white shadow-md hover:shadow-xl transition-all duration-300 overflow-hidden"
+        className="h-full overflow-hidden rounded-lg border border-gray-100 bg-white shadow-md transition-all duration-300 hover:shadow-xl"
         whileHover={{ y: -4 }}
       >
         <div className="relative aspect-[4/3] shadow-md z-10 bg-gray-100">
@@ -103,7 +103,7 @@ const VenueCard = ({ venue, viewMode = 'grid' }) => {
             </div>
           )}
           <div className="absolute top-3 left-3">
-            <Badge className="gradient-brand text-white border-0 shadow-sm px-3 py-1 text-xs font-semibold rounded-full">
+            <Badge className="border-0 bg-brand-green px-3 py-1 text-[9px] font-normal uppercase text-white shadow-sm">
               {safeVenue.category}
             </Badge>
           </div>
@@ -114,7 +114,7 @@ const VenueCard = ({ venue, viewMode = 'grid' }) => {
 
         <div className="p-5">
           <div className="flex justify-between items-start mb-2">
-            <h3 className="font-bold text-lg text-gray-900 group-hover:text-gray-700 transition-colors line-clamp-1">
+            <h3 className="line-clamp-1 pl-1 text-[13px] font-medium leading-tight text-brand-black transition-colors group-hover:text-gray-700">
               {safeVenue.name}
             </h3>
             <div className="flex items-center gap-1 shrink-0">
@@ -123,7 +123,7 @@ const VenueCard = ({ venue, viewMode = 'grid' }) => {
             </div>
           </div>
 
-          <div className="flex items-center gap-2 text-sm text-gray-500 mb-3">
+          <div className="mb-3 flex items-center gap-2 text-[11px] font-normal text-gray-500">
             <MapPin strokeWidth={1.5} className="w-4 h-4 shrink-0" />
             <span className="truncate">{safeVenue.address}</span>
           </div>
@@ -131,7 +131,7 @@ const VenueCard = ({ venue, viewMode = 'grid' }) => {
           {safeVenue.venueTypes?.length > 0 && (
             <div className="mb-3 flex flex-wrap gap-2">
               {safeVenue.venueTypes.slice(0, 2).map((venueType) => (
-                <span key={venueType.id || venueType.slug || venueType.name} className="text-xs text-brand-purple bg-brand-purple/10 px-2 py-1 rounded-full">
+                <span key={venueType.id || venueType.slug || venueType.name} className="rounded-full bg-brand-green px-2 py-1 text-[9px] font-normal text-white">
                   {venueType.name}
                 </span>
               ))}

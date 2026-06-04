@@ -2,11 +2,12 @@ import { Link } from 'react-router-dom'
 import { Star, Heart, MapPin, Circle } from 'lucide-react'
 import { motion } from 'framer-motion'
 import { Badge } from '../../../shared/ui/badge'
+import { getEventHref } from '../../../shared/lib/eventRoutes'
 
 const EventCard = ({ event, viewMode = 'grid', hideRating = false, showVenueLogoPlaceholder = false }) => {
   if (viewMode === 'list') {
     return (
-      <Link to={`/events/${event.id}`} className="group block">
+      <Link to={getEventHref(event)} className="group block">
         <motion.div
           className="rounded-xl bg-white border border-gray-100 shadow-md hover:shadow-xl transition-all duration-300 overflow-hidden"
           whileHover={{ y: -4 }}
@@ -20,7 +21,7 @@ const EventCard = ({ event, viewMode = 'grid', hideRating = false, showVenueLogo
               />
               {showVenueLogoPlaceholder && <div className="absolute top-3 right-3 flex h-10 w-10 items-center justify-center rounded-full border border-white/70 bg-white/85 text-gray-400 shadow-sm backdrop-blur-sm"><Circle strokeWidth={1.5} className="h-4 w-4" /></div>}
               <div className="absolute top-3 left-3">
-                <Badge className="gradient-brand text-white border-0 shadow-sm px-3 py-1 text-xs font-semibold rounded-full">
+                <Badge className="border-0 bg-brand-purple px-3 py-1 text-[9px] font-normal uppercase text-white shadow-sm">
                   {event.category}
                 </Badge>
               </div>
@@ -29,7 +30,7 @@ const EventCard = ({ event, viewMode = 'grid', hideRating = false, showVenueLogo
             <div className="flex-1 p-5 flex flex-col justify-between">
               <div>
                 <div className="flex justify-between items-start mb-2">
-                  <h3 className="font-bold text-xl text-gray-900 group-hover:text-gray-700 transition-colors">
+                  <h3 className="pl-1 text-[13px] font-medium leading-tight text-brand-black transition-colors group-hover:text-gray-700">
                     {event.title}
                   </h3>
                   <div className="flex items-center gap-1 bg-gray-50 px-2 py-1 rounded-full">
@@ -39,7 +40,7 @@ const EventCard = ({ event, viewMode = 'grid', hideRating = false, showVenueLogo
                   </div>
                 </div>
 
-                <div className="flex flex-wrap gap-4 text-sm text-gray-600 mb-4">
+                <div className="mb-4 flex flex-wrap gap-4 text-[11px] font-normal text-gray-600">
                   <div className="flex items-center gap-2">
                     <MapPin strokeWidth={1.5} className="w-4 h-4 text-brand-purple" />
                     <span>{event.venue}</span>
@@ -70,7 +71,7 @@ const EventCard = ({ event, viewMode = 'grid', hideRating = false, showVenueLogo
   }
 
   return (
-    <Link to={`/events/${event.id}`} className="group block h-full">
+    <Link to={getEventHref(event)} className="group block h-full">
       <motion.div
         className="rounded-xl h-full bg-white border border-gray-100 shadow-md overflow-hidden"
         whileHover={{ y: -4 }}
@@ -92,7 +93,7 @@ const EventCard = ({ event, viewMode = 'grid', hideRating = false, showVenueLogo
 
           {/* Category Pill */}
           <div className="absolute top-3 left-3">
-            <Badge className="gradient-brand text-white border-0 shadow-sm hover:bg-opacity-90 px-3 py-1 text-xs font-semibold rounded-full">
+            <Badge className="border-0 bg-brand-purple px-3 py-1 text-[9px] font-normal uppercase text-white shadow-sm">
               {event.category}
             </Badge>
           </div>
@@ -100,7 +101,7 @@ const EventCard = ({ event, viewMode = 'grid', hideRating = false, showVenueLogo
 
         <div className="p-5">
           <div className="flex justify-between items-start mb-2 gap-3">
-            <h3 className="font-bold text-gray-900 text-lg leading-tight group-hover:text-gray-700 transition-colors line-clamp-1">
+            <h3 className="line-clamp-1 pl-1 text-[13px] font-medium leading-tight text-brand-black transition-colors group-hover:text-gray-700">
               {event.title}
             </h3>
             {!hideRating && event.rating !== null && event.rating !== undefined && <div className="flex items-center gap-1 shrink-0">
@@ -109,12 +110,12 @@ const EventCard = ({ event, viewMode = 'grid', hideRating = false, showVenueLogo
             </div>}
           </div>
 
-          <div className="space-y-2 mb-4 text-sm text-gray-500">
+          <div className="mb-4 space-y-2 text-[11px] font-normal text-gray-500">
             <div className="flex items-center gap-2">
               <MapPin strokeWidth={1.5} className="w-4 h-4 shrink-0" />
               <span className="truncate">{event.venue}</span>
             </div>
-            {event.location && <div className="truncate text-xs text-gray-400">{event.location}</div>}
+            {event.location && <div className="truncate pl-1 text-[11px] font-normal text-gray-400">{event.location}</div>}
             {(event.date || event.time) && <div className="text-xs text-gray-400">{[event.date, event.time].filter(Boolean).join(' • ')}</div>}
           </div>
 

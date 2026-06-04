@@ -2,9 +2,11 @@ import { Link } from 'react-router-dom'
 import { Star, Users } from 'lucide-react'
 import { Card, CardContent } from '../../../shared/ui/card'
 import { Badge } from '../../../shared/ui/badge'
+import { getEventHref } from '../../../shared/lib/eventRoutes'
 
 export default function PackageCard({ item, viewMode = 'grid' }) {
-  const href = item.eventId ? `/events/${item.eventId}?tab=packages` : `/events`
+  const eventHref = item.eventId ? getEventHref({ eventId: item.eventId }) : '/events'
+  const href = item.eventId ? `${eventHref}?tab=packages` : eventHref
 
   if (viewMode === 'list') {
     return (

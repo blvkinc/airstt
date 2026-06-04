@@ -4,6 +4,7 @@ import { CalendarDays, ChevronLeft, ChevronRight, Heart, MapPin, Search, Sparkle
 import { SttCategoryLinks, SttDesktopSearchBar, SttSearchOverlay } from '../components/SttDiscovery'
 import { useEventCategoriesCatalog, useEventsCatalog, useHomepageCatalog, useVenueTypesCatalog, useVenuesCatalog } from '../features/catalog'
 import sttLogo from '../shared/assets/sttmainlogo.svg'
+import { getEventHref } from '../shared/lib/eventRoutes'
 
 const brandLogoFilter = {
   filter: 'brightness(0) saturate(100%) invert(59%) sepia(19%) saturate(761%) hue-rotate(238deg) brightness(88%) contrast(87%)',
@@ -74,21 +75,20 @@ const formatEventDay = (event) => {
   return 'Day'
 }
 
-const getEventRoute = (event) => event?.href || `/events/${event?.eventId || event?.id}`
 const getVenueRoute = (venue) => `/venues/${venue?.id}`
 const getEventAddress = (event) => event?.venueDetails?.address || event?.location || event?.venue || 'Dubai'
 
 const getCategoryPillClassName = (label = '') => {
   const value = label.toLowerCase()
-  if (value.includes('beach') || value.includes('pool')) return 'bg-cyan-50 text-cyan-700 ring-cyan-100'
-  if (value.includes('night') || value.includes('party')) return 'bg-fuchsia-50 text-fuchsia-700 ring-fuchsia-100'
-  if (value.includes('dining') || value.includes('restaurant')) return 'bg-amber-50 text-amber-700 ring-amber-100'
-  if (value.includes('brunch')) return 'bg-rose-50 text-rose-700 ring-rose-100'
-  if (value.includes('venue')) return 'bg-emerald-50 text-emerald-700 ring-emerald-100'
-  return 'bg-[#f4edff] text-brand-purple ring-brand-purple/15'
+  if (value.includes('beach') || value.includes('pool')) return 'bg-brand-green text-white ring-transparent'
+  if (value.includes('night') || value.includes('party')) return 'bg-brand-purple text-white ring-transparent'
+  if (value.includes('dining') || value.includes('restaurant')) return 'bg-brand-yellow text-white ring-transparent'
+  if (value.includes('brunch')) return 'bg-brand-purple text-white ring-transparent'
+  if (value.includes('venue')) return 'bg-brand-green text-white ring-transparent'
+  return 'bg-brand-purple text-white ring-transparent'
 }
 
-const dayPillClassName = 'bg-emerald-50 text-emerald-700 ring-emerald-100'
+const dayPillClassName = 'bg-brand-green text-white ring-transparent'
 
 function FeaturedAdSlider({ slides, loading, activeIndex, onPrevious, onNext, onSelect }) {
   if (slides.length === 0) {
@@ -163,7 +163,7 @@ function FeaturedAdSlider({ slides, loading, activeIndex, onPrevious, onNext, on
 function SectionHeader({ title, actionTo }) {
   return (
     <div className="mb-3 flex items-center justify-between">
-      <h2 className="text-[17px] font-extrabold tracking-tight text-gray-950 md:text-2xl">{title}</h2>
+      <h2 className="text-[17px] font-semibold tracking-tight text-gray-950">{title}</h2>
       {actionTo && (
         <Link to={actionTo} aria-label={`See all ${title}`} className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-gray-100 text-gray-700 transition-colors hover:bg-gray-200">
           <ChevronRight className="h-4 w-4" strokeWidth={2.2} />
@@ -179,7 +179,7 @@ function CompactEventCard({ event, badge = 'Featured' }) {
   const hasPrice = event.price !== null && event.price !== undefined
 
   return (
-    <Link to={getEventRoute(event)} className="block w-[174px] shrink-0 snap-start md:w-full md:min-w-0">
+    <Link to={getEventHref(event)} className="block w-[174px] shrink-0 snap-start md:w-full md:min-w-0">
       <article className="group">
         <div className="relative aspect-[1.48] overflow-hidden rounded-[14px] bg-gray-100 shadow-[0_2px_10px_rgba(15,23,42,0.08)] ring-1 ring-black/[0.04] transition-shadow group-hover:shadow-[0_5px_18px_rgba(15,23,42,0.10)]">
           {event.image ? (
@@ -196,7 +196,7 @@ function CompactEventCard({ event, badge = 'Featured' }) {
         </div>
         <div className="flex min-h-[84px] flex-col pt-1.5">
           <div className="flex items-start justify-between gap-2">
-            <h3 className="line-clamp-2 text-[12px] font-semibold leading-tight text-gray-950 md:text-[13px]">
+            <h3 className="line-clamp-2 pl-1 text-[13px] font-medium leading-tight text-gray-950">
               {event.title}
             </h3>
             <div className="shrink-0 text-right">
@@ -211,15 +211,15 @@ function CompactEventCard({ event, badge = 'Featured' }) {
             </div>
           </div>
           <div className="mt-1 space-y-0.5">
-            <p className="flex items-center gap-1 truncate text-[9px] font-medium text-gray-500 md:text-xs">
+            <p className="flex items-center gap-1 truncate text-[11px] font-normal text-gray-500">
               <MapPin className="h-3 w-3 shrink-0 text-gray-400" strokeWidth={1.8} />
               <span className="truncate">{event.venue}</span>
             </p>
-            <p className="truncate text-[9px] text-gray-400 md:text-xs">{getEventAddress(event)}</p>
+            <p className="truncate pl-1 text-[11px] font-normal text-gray-400">{getEventAddress(event)}</p>
           </div>
           <div className="mt-auto flex min-h-[20px] flex-wrap gap-1.5 pt-1.5">
-            <span className={`rounded-full px-2 py-1 text-[8px] font-semibold uppercase leading-none ring-1 md:text-[9px] ${getCategoryPillClassName(categoryLabel)}`}>{categoryLabel}</span>
-            <span className={`rounded-full px-2 py-1 text-[8px] font-semibold uppercase leading-none ring-1 md:text-[9px] ${dayPillClassName}`}>{dayLabel}</span>
+            <span className={`rounded-full px-2 py-1 text-[9px] font-normal uppercase leading-none ring-1 ${getCategoryPillClassName(categoryLabel)}`}>{categoryLabel}</span>
+            <span className={`rounded-full px-2 py-1 text-[9px] font-normal uppercase leading-none ring-1 ${dayPillClassName}`}>{dayLabel}</span>
           </div>
         </div>
       </article>
@@ -233,7 +233,7 @@ function CompactVenueCard({ venue }) {
   return (
     <Link to={getVenueRoute(venue)} className="block w-[142px] shrink-0 snap-start md:w-full md:min-w-0">
       <article className="group">
-        <div className="relative aspect-[1.22] overflow-hidden rounded-[14px] bg-gray-100 shadow-[0_2px_10px_rgba(15,23,42,0.08)] ring-1 ring-black/[0.04] transition-shadow group-hover:shadow-[0_5px_18px_rgba(15,23,42,0.10)]">
+        <div className="relative aspect-[1.22] overflow-hidden rounded-lg bg-gray-100 shadow-[0_2px_10px_rgba(15,23,42,0.08)] ring-1 ring-black/[0.04] transition-shadow group-hover:shadow-[0_5px_18px_rgba(15,23,42,0.10)]">
           {venue.image ? (
             <img src={venue.image} alt={venue.name} className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.03]" />
           ) : (
@@ -245,13 +245,13 @@ function CompactVenueCard({ venue }) {
           </button>
         </div>
         <div className="flex min-h-[70px] flex-col pt-1.5">
-          <h3 className="line-clamp-2 text-[12px] font-semibold leading-tight text-gray-950 md:text-[13px]">{venue.name}</h3>
-          <div className="mt-1 flex min-h-[18px] items-center gap-1 truncate text-[9px] text-gray-500 md:text-xs">
+          <h3 className="line-clamp-2 pl-1 text-[13px] font-medium leading-tight text-gray-950">{venue.name}</h3>
+          <div className="mt-1 flex min-h-[18px] items-center gap-1 truncate text-[11px] font-normal text-gray-500">
             <MapPin className="h-3 w-3 shrink-0 text-gray-400" strokeWidth={1.8} />
             <span className="truncate">{venue.location || venue.address}</span>
           </div>
           <div className="mt-auto flex pt-1.5">
-            <span className={`w-fit rounded-full px-2 py-1 text-[8px] font-semibold uppercase leading-none ring-1 md:text-[9px] ${getCategoryPillClassName(categoryLabel)}`}>{categoryLabel}</span>
+            <span className={`w-fit rounded-full px-2 py-1 text-[9px] font-normal uppercase leading-none ring-1 ${getCategoryPillClassName(categoryLabel)}`}>{categoryLabel}</span>
           </div>
         </div>
       </article>
@@ -280,7 +280,7 @@ const buildSlides = (events) => {
     venue: event.venue || event.location || 'Dubai',
     description: event.description || event.venueDetails?.description || event.category || 'Curated by Set The Table.',
     price: event.price !== null && event.price !== undefined ? `From AED ${event.price}` : 'View details',
-    to: getEventRoute(event),
+    to: getEventHref(event),
     image: event.image,
   }))
 }
@@ -415,7 +415,7 @@ const HomePage = () => {
         onApplySearch={handleApplySearch}
       />
 
-      <section className="mx-auto w-full max-w-[100vw] overflow-x-hidden px-5 pt-5 md:max-w-6xl md:overflow-visible md:px-8 md:pt-7">
+      <section className="mx-auto w-full max-w-[100vw] overflow-x-hidden px-5 pt-5 md:max-w-none md:overflow-visible md:bg-[#f8f8f8]/95 md:px-8 md:py-5 md:shadow-[0_4px_22px_rgba(52,52,52,0.10)]">
         <div className="md:hidden">
           <div className="mb-4 flex items-center justify-between">
             <Link to="/" className="block">
@@ -442,7 +442,7 @@ const HomePage = () => {
         </div>
 
         <div className="hidden md:block">
-          <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-6">
+          <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-10">
             <Link to="/" className="flex items-center">
               <img src={sttLogo} alt="Set The Table" className="h-12 w-auto object-contain" style={brandLogoFilter} />
             </Link>
@@ -461,7 +461,14 @@ const HomePage = () => {
             </div>
           </div>
 
-          <SttDesktopSearchBar mode="home" searchTerm={activeSearchTerm} onApplySearch={handleApplySearch} onOpenSearch={() => setSearchOpen(true)} />
+          <SttDesktopSearchBar
+            mode="home"
+            searchTerm={activeSearchTerm}
+            recentSearches={recentSearches}
+            suggestedLocations={suggestedLocations}
+            categoryTiles={searchCategoryTiles}
+            onApplySearch={handleApplySearch}
+          />
         </div>
       </section>
 
